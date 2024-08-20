@@ -2,7 +2,7 @@
 name = "sqthon"
 version = "0.1.0"
 description = ""
-authors = ["HIMRAJ <himrajdas7@gmail.com>"]
+authors = ["HIMRAJ <iamhimraj002077@gmail.com>"]
 readme = "README.md"
 license = "MIT"
 
@@ -16,6 +16,7 @@ matplotlib = "^3.9.2"
 pymysql = "^1.1.1"
 python-dotenv = "^1.0.1"
 cryptography = "^43.0.0"
+psycopg2 = "^2.9.9"
 
 
 [build-system]

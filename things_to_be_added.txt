@@ -1,0 +1,4 @@
+1. Try to make a script which can automatically put a csv file into a database table.
+2. Use asyncio.
+3. Exception Handling.
+4. 
