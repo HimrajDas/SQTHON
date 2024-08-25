@@ -1,9 +1,11 @@
 import seaborn as sns
 import matplotlib.pyplot as plt
 import pandas as pd
-from typing import Literal, Tuple, Any
+from typing import Literal, Tuple, Any, Optional
+from textwrap import wrap
 
 # TODO: Exception Handling.
+# TODO: add multicolored-line from matplotlib.
 class DataVisualizer:
     @staticmethod
     def plot(
@@ -13,10 +15,13 @@ class DataVisualizer:
         y: str,
         title: str,
         figsize: Tuple[float, float] = (6, 6),
+        theme: Optional[str] = None,
         **kwargs: Any) -> None:
         """Visualization for the dataframe."""
+        if theme:
+            sns.set_theme(theme)
 
-        plt.figure(figsize=figsize)
+        fig, ax = plt.subplots(figsize=figsize)
 
         if plot_type == "scatter":
             sns.scatterplot(data=data, x=x, y=y, **kwargs)
@@ -36,9 +41,25 @@ class DataVisualizer:
             sns.jointplot(data=data, x=x, y=y, kind="scatter", **kwargs)
 
         
+        # plt.title(title)
+        
+        # # Wrap x-axis labels
+        # labels = ['\n'.join(wrap(label.get_text(), 15)) for label in ax.get_xticklabels()]
+        # ax.set_xticklabels(labels)
+        
+        # plt.xticks(rotation=0, ha='center')
+        # plt.xlabel(x)
+        # plt.ylabel(y)
+        
+        # plt.tight_layout()
+        # plt.subplots_adjust(bottom=0.2)  # Adjust bottom margin to accommodate wrapped labels
+        # plt.show()
+
+        
         plt.title(title)
-        plt.xticks(rotation=45)
+        plt.xticks(rotation=45, ha='right', va='top', rotation_mode='anchor')
         plt.xlabel(x)
         plt.ylabel(y)
         plt.tight_layout()
+        plt.subplots_adjust(bottom=0.2)
         plt.show()

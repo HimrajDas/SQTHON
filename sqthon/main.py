@@ -1,17 +1,28 @@
 from .connection import DatabaseConnector
 from .data_visualizer import DataVisualizer
 import pandas as pd
+from sqlalchemy import exc, text
+
 
 # TODO: Exception Handling
 # TODO: Add logging
+# TODO: Need to add sqlite connection
 
 class Sqthon:
     def __init__(self, dialect: str, driver: str, database: str):
         self.connect_db = DatabaseConnector(dialect, driver, database)
         self.visualizer = DataVisualizer()
 
-    # TODO: Sqthon needs to be connected to other databases too!
-    
+
+    def start_connection(self):
+        self.connect_db.connect()
+        print("Database connection started.")
+
+    def end_connection(self):
+        self.connect_db.disconnect()
+        print("Database connection ended.")
+
+
     def run_query(self,
                   query: str,
                   visualize: bool = False,
@@ -42,10 +53,14 @@ class Sqthon:
             - ValueError: If visualize is True but plot_type, x, y, or title are not provided.
         """
 
-
-        with self.connect_db.engine.connect() as conn:
-            result =  pd.read_sql_query(query, conn)
-            
+        if self.connect_db.connection is None or self.connect_db.connection.closed:
+            print("No active connection. Starting a new one.")
+            self.start_connection()
+    
+        try:
+            result =  pd.read_sql_query(text(query), self.connect_db.connection)
+        except exc.OperationalError as e:
+            print(f"{e}")
 
         if visualize:
             if not all([plot_type, x, y, title]):
