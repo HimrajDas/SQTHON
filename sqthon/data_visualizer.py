@@ -7,29 +7,6 @@ from textwrap import wrap
 # TODO: Exception Handling.
 # TODO: add multicolored-line from matplotlib.
 
-        
-        # plt.title(title)
-    
-        # # Wrap x-axis labels
-        # labels = ['\n'.join(wrap(label.get_text(), 15)) for label in ax.get_xticklabels()]
-        # ax.set_xticklabels(labels)
-        # plt.xticks(rotation=0, ha='center')
-        # plt.xlabel(x)
-        # plt.ylabel(y)
-        # plt.tight_layout()
-        # plt.subplots_adjust(bottom=0.2)  # Adjust bottom margin to accommodate wrapped labels
-        # plt.show()
-
-    
-        # plt.title(title)
-        # plt.xticks(rotation=45, ha='right', va='top', rotation_mode='anchor')
-        # plt.xlabel(x)
-        # plt.ylabel(y)
-        # plt.tight_layout()
-        # plt.subplots_adjust(bottom=0.2)
-        # plt.show()
-
-
 class DataVisualizer:
     @staticmethod
     def plot(
