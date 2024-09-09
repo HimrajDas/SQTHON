@@ -1,4 +1,4 @@
-<img src="path/to/sqthon_removebg_preview.png" align="right" width="150" alt="Sqthon logo">
+<img src="assets/sqthon_removebg_preview.png" align="right" width="150" alt="Sqthon logo">
 
 # Sqthon
 
