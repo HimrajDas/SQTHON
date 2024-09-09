@@ -1,3 +1,5 @@
+<img src="assets/1.png" alt="Sqthon Logo" width="200"/>
+
 # Sqthon
 
 Sqthon is a Python package that simplifies database operations and data visualization. It provides an easy-to-use interface for connecting to databases, executing SQL queries, and visualizing the results.
