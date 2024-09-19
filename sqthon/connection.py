@@ -8,8 +8,9 @@ from sqlalchemy.engine import Engine
 
 class DatabaseConnector:
     """Connect to a database."""
+
     # Currently it gonna only work for mysql.
-    def __init__(self, dialect: str, driver:str, database: str) -> None:
+    def __init__(self, dialect: str, driver: str, database: str) -> None:
         load_dotenv()
         self.dialect = dialect
         self.driver = driver
@@ -27,13 +28,12 @@ class DatabaseConnector:
         )
 
         return create_engine(url_object)
-    
+
     def connect(self):
         if self.connection is None or self.connection.closed:
             self.connection = self.engine.connect()
         return self.connection
 
-    
     def disconnect(self):
         if self.connection is not None:
             try:
@@ -42,5 +42,3 @@ class DatabaseConnector:
                 print(f"Error closing the connection: {e}")
             finally:
                 self.connection = None
-    
-
