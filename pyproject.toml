@@ -19,6 +19,7 @@ cryptography = "^43.0.0"
 psycopg2 = "^2.9.9"
 ollama = "^0.3.3"
 requests = "^2.32.3"
+pywin32 = "^306"
 
 
 [build-system]

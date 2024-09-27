@@ -2,6 +2,7 @@ import os
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, URL, text
 from sqlalchemy.engine import Engine
+from sqlalchemy.exc import OperationalError
 
 
 # TODO: Exception handling
@@ -9,7 +10,7 @@ from sqlalchemy.engine import Engine
 class DatabaseConnector:
     """Connect to a database."""
 
-    # Currently it gonna only work for mysql.
+    # Currently it gonna only work for mysql and postgresql.
     def __init__(self, dialect: str, driver: str, database: str) -> None:
         load_dotenv()
         self.dialect = dialect
@@ -30,9 +31,8 @@ class DatabaseConnector:
         return create_engine(url_object)
 
     def connect(self):
-        if self.connection is None or self.connection.closed:
-            self.connection = self.engine.connect()
-        return self.connection
+        # rewrite it.
+        ...
 
     def disconnect(self):
         if self.connection is not None:
@@ -42,3 +42,5 @@ class DatabaseConnector:
                 print(f"Error closing the connection: {e}")
             finally:
                 self.connection = None
+                # add stop service.
+

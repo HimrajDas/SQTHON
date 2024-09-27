@@ -1,11 +1,15 @@
 import ollama
-from sqthon.utilities import is_ollama_running
+from sqthon.services import is_ollama_running
 from sqthon.main import Sqthon
 from typing import Dict, List, Optional
 from functools import lru_cache
 from sqlalchemy import inspect
 import json
+import logging
 
+
+# TODO: add logging.
+# TODO: use RE to extract the plain query from the bullshit the model return sometimes.
 
 class SqthonAI(Sqthon):
     def __init__(self, dialect: str, driver: str, database: str, model: str):
@@ -37,6 +41,7 @@ class SqthonAI(Sqthon):
             if table_name not in inspector.get_table_names():
                 return None
             columns = [
+
                 {"name": col["name"], "type": str(col["type"])}
                 for col in inspector.get_columns(table_name)
             ]
@@ -65,25 +70,34 @@ class SqthonAI(Sqthon):
             schema_prompt = f"""
             For the table '{table_name}', you have the following schema:
             {json.dumps(schema_info, indent=2)}
-            
+
             Use this schema information to ensure you reference existing columns correctly.
             """
 
         full_prompt = f"""
+        RETURN ONLY THE SQL QUERY.
+
         {self.system_prompt}
-        
+
         {schema_prompt}
         Given the following prompt, generate a SQL query to answer the question.
         Prompt: {prompt}
         Database dialect: {self.connect_db.dialect}
-        
-        Important: When dealing with dates or years, make sure to use the correct date functions for {self.connect_db.dialect}.
-        For MySQL, you might need to use YEAR() function to extract the year from a date column.
-        Respond with only the SQL query, no explanation. And double check the column names of the generated SQL query 
-        with the actual column names.
+
+        CRITICAL INSTRUCTIONS:
+        1. Return ONLY the SQL query.
+        2. Do NOT include any explanations, comments, or markdown formatting.
+        3. Do NOT wrap the query in quotes or any other characters.
+        4. The query should start with SELECT and end with a semicolon.
+        5. Ensure proper escaping of special characters, especially single quotes (e.g., 'Men\'s clothing stores').
+        6. Use YEAR() function to extract year from date columns in MySQL.
+        7. Double-check column names to match the actual database schema.
+
+        YOU RETURN ONLY the SQL query.
         """
-        response = ollama.generate(model=self.model, prompt=full_prompt)
-        return response["response"].strip()
+
+        ans = ollama.generate(model=self.model, prompt=full_prompt)
+        return ans["response"].strip()
 
 
 model = SqthonAI("mysql", "pymysql", "sqlbook", model="codellama:7b")

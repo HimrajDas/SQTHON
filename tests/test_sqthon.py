@@ -4,7 +4,7 @@ from sqthon import Sqthon
 class TestSqthon(unittest.TestCase):
     def setUp(self):
         """Set up a sqthon instance before each test."""
-        self.sqthon = Sqthon("postgresql", "psycopg2", "sqlbook")
+        self.sqthon = Sqthon("postgresql", "psycopg2", "sqlbook", "MySQL84")
 
 
     def test_run_query_without_visualization(self):

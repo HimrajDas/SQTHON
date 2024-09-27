@@ -7,11 +7,19 @@ from sqlalchemy import exc, text
 # TODO: Exception Handling
 # TODO: Add logging
 # TODO: Need to add sqlite connection
+#
 
 class Sqthon:
     def __init__(self, dialect: str, driver: str, database: str):
+        self.dialect = dialect
         self.connect_db = DatabaseConnector(dialect, driver, database)
         self.visualizer = DataVisualizer()
+ 
+
+
+    def stop_server_instance(self):
+        if self.service_name:
+            stop_service(self.service_name)
 
     def start_connection(self):
         self.connect_db.connect()
