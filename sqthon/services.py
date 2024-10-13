@@ -1,6 +1,6 @@
 import requests
 from requests.exceptions import RequestException
-import os, platform, subprocess, sys
+import subprocess
 from sqthon.admin import is_admin
 
 
@@ -56,8 +56,11 @@ def start_service(service_name: str):
             print(f"Error message: {e.stderr}")
     else:
         from sqthon.admin import runAsAdmin
-        runAsAdmin(service_name, "start")
-
+        try:
+            runAsAdmin(service_name, "start")
+            return True
+        except Exception as e:
+            print(f"{e}")
 
 
 def stop_service(service_name: str):
@@ -73,7 +76,7 @@ def stop_service(service_name: str):
             print(f"Error message: {e.stderr}")
     else:
         from sqthon.admin import runAsAdmin
-        runAsAdmin(service_name, "stop")
-    
-
-stop_service("MySQL84")
+        try:
+            runAsAdmin(service_name, "stop")
+        except Exception as e:
+            print(f"{e}")

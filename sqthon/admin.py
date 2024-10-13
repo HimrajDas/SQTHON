@@ -1,9 +1,9 @@
-import os, sys
-from typing import List, Tuple
+import os
 import traceback
-import win32api, win32con, win32event, win32process
+import win32event, win32process
 from win32com.shell.shell import ShellExecuteEx
 import win32com.shell.shellcon as shellcon
+
 
 # This script going to run on windows only. (for now)
 
@@ -18,7 +18,7 @@ def is_admin():
 
 
 def runAsAdmin(service: str, action: str):
-    cmd = "sc"
+    cmd = "net"
     params = f"{action} {service}"
     execute_cmd = ShellExecuteEx(
         lpVerb="runas",
@@ -50,4 +50,3 @@ def runAsAdmin(service: str, action: str):
             print(f"Failed to start {service} server instance.")
         elif action == "stop":
             print(f"Failed to stop the {service} server instance.")
-

@@ -2,7 +2,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import pandas as pd
 from typing import Literal, Tuple, Any, Optional
-from textwrap import wrap
+
 
 # TODO: Exception Handling.
 # TODO: add multicolored-line from matplotlib.
@@ -10,15 +10,16 @@ from textwrap import wrap
 class DataVisualizer:
     @staticmethod
     def plot(
-        data: pd.DataFrame,
-        plot_type: Literal["scatter", "line", "bar", "hist", "box", "violin", "heatmap", "pairplot", "jointplot", "kde", "swarm", "lmplot"],
-        x: Optional[str] = None,
-        y: Optional[str] = None,
-        title: str = "",
-        figsize: Tuple[float, float] = (10, 6),
-        theme: Optional[str] = None,
-        palette: Optional[str] = None,
-        **kwargs: Any
+            data: pd.DataFrame,
+            plot_type: Literal[
+                "scatter", "line", "bar", "hist", "box", "violin", "heatmap", "pairplot", "jointplot", "kde", "swarm", "lmplot"],
+            x: Optional[str] = None,
+            y: Optional[str] = None,
+            title: str = "",
+            figsize: Tuple[float, float] = (10, 6),
+            theme: Optional[str] = None,
+            palette: Optional[str] = None,
+            **kwargs: Any
     ) -> None:
         """
         Create various types of plots based on the provided data.
@@ -93,12 +94,12 @@ class DataVisualizer:
 
     @staticmethod
     def multi_plot(
-        data: pd.DataFrame,
-        plot_specs: list,
-        title: str = "",
-        figsize: Tuple[float, float] = (15, 10),
-        theme: Optional[str] = None,
-        palette: Optional[str] = None
+            data: pd.DataFrame,
+            plot_specs: list,
+            title: str = "",
+            figsize: Tuple[float, float] = (15, 10),
+            theme: Optional[str] = None,
+            palette: Optional[str] = None
     ) -> None:
         """
         Create multiple plots in a single figure.
@@ -130,7 +131,7 @@ class DataVisualizer:
             plot_type = plot_spec.pop('type')
             x = plot_spec.pop('x', None)
             y = plot_spec.pop('y', None)
-            
+
             if plot_type == "scatter":
                 sns.scatterplot(data=data, x=x, y=y, ax=axes[i], **plot_spec)
             elif plot_type == "line":
@@ -161,5 +162,60 @@ class DataVisualizer:
             fig.delaxes(axes[i])
 
         plt.suptitle(title, fontsize=16)
+        plt.tight_layout()
+        plt.show()
+
+    @staticmethod
+    def plot_melted_comparison(
+            data: pd.DataFrame,
+            x: str,
+            y_vars: list,
+            var_name: str = "variable",
+            value_name: str = "value",
+            title: str = "",
+            figsize: Tuple[float, float] = (10, 6),
+            theme: Optional[str] = None,
+            palette: Optional[str] = None,
+            **kwargs: Any
+    ) -> None:
+        """
+        Plot a comparison of multiple y-variables on the same plot by melting the data.
+
+        Args:
+            data (pd.DataFrame): The dataset to visualize.
+            x (str): The column name for x-axis.
+            y_vars (list): List of column names to compare on y-axis.
+            var_name (str): Name for the melted variable column (default: 'variable').
+            value_name (str): Name for the melted value column (default: 'value').
+            title (str): The title of the plot.
+            figsize (Tuple[float, float]): The size of the figure in inches.
+            theme (str, optional): The seaborn theme to use.
+            palette (str, optional): The color palette to use.
+            **kwargs: Additional keyword arguments for the line plot.
+
+        Returns:
+            None
+        """
+        if theme:
+            sns.set_theme(theme)
+
+        if palette:
+            sns.set_palette(palette)
+
+        # Melt the data to have sales and avg_sales in a single column
+        melted_data = pd.melt(data, id_vars=[x], value_vars=y_vars, var_name=var_name, value_name=value_name)
+
+        fig, ax = plt.subplots(figsize=figsize)
+
+        sns.lineplot(data=melted_data, x=x, y=value_name, hue=var_name, ax=ax, **kwargs)
+
+        plt.title(title)
+        plt.xlabel(x)
+        plt.ylabel(value_name)
+
+        # Rotate x-axis labels if they're too long
+        if len(data[x].unique()) > 10:
+            plt.xticks(rotation=45, ha='right')
+
         plt.tight_layout()
         plt.show()

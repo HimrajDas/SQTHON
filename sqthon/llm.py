@@ -1,15 +1,14 @@
 import ollama
-from sqthon.services import is_ollama_running
+from sqthon.services import is_ollama_running, start_ollama_service
 from sqthon.main import Sqthon
 from typing import Dict, List, Optional
 from functools import lru_cache
 from sqlalchemy import inspect
 import json
-import logging
 
 
-# TODO: add logging.
-# TODO: use RE to extract the plain query from the bullshit the model return sometimes.
+# TODO: use RE to extract the plain query from the bullshit, the model return sometimes.
+# TODO: add server starting feature in llm.
 
 class SqthonAI(Sqthon):
     def __init__(self, dialect: str, driver: str, database: str, model: str):
@@ -17,7 +16,10 @@ class SqthonAI(Sqthon):
         self.model = model
         self.schema_cache: Dict[str, List[Dict]] = {}
         if not is_ollama_running():
-            raise RuntimeError("Ollama service is not running. Please start the Ollama service and try again.")
+            try:
+                start_ollama_service()
+            except Exception:
+                raise RuntimeError("Ollama service is not running. Please start the Ollama service and try again.")
 
         self.system_prompt = """
         You are an advanced AI assistant specialized in database operations and data visualization.
@@ -48,7 +50,8 @@ class SqthonAI(Sqthon):
             self.schema_cache[table_name] = columns
         return self.schema_cache[table_name]
 
-    def process_natural_language_query(self, prompt: str, table_name: Optional[str] = None):
+
+    def ask(self, prompt: str, table_name: Optional[str] = None):
         if table_name:
             schema_info = self.get_table_schema(table_name)
             if schema_info is None:
@@ -88,20 +91,12 @@ class SqthonAI(Sqthon):
         1. Return ONLY the SQL query.
         2. Do NOT include any explanations, comments, or markdown formatting.
         3. Do NOT wrap the query in quotes or any other characters.
-        4. The query should start with SELECT and end with a semicolon.
-        5. Ensure proper escaping of special characters, especially single quotes (e.g., 'Men\'s clothing stores').
-        6. Use YEAR() function to extract year from date columns in MySQL.
-        7. Double-check column names to match the actual database schema.
+        4. Ensure proper escaping of special characters, especially single quotes (e.g., 'Men\'s clothing stores').
+        5. Use YEAR() function to extract year from date columns in MySQL.
+        6. Double-check column names to match the actual database schema.
 
         YOU RETURN ONLY the SQL query.
         """
 
         ans = ollama.generate(model=self.model, prompt=full_prompt)
         return ans["response"].strip()
-
-
-model = SqthonAI("mysql", "pymysql", "sqlbook", model="codellama:7b")
-result, query = model.process_natural_language_query("What is the total sales of 2017 where kind_of_business is Men's clothing stores?", table_name="us_store_sales")
-print(f"Generated SQL: {query}")
-print(result)
-
