@@ -1,10 +1,11 @@
 import traceback
 from pandas import DataFrame
-from .connection import DatabaseConnector
-from .data_visualizer import DataVisualizer
+from sqthon.connection import DatabaseConnector
+from sqthon.data_visualizer import DataVisualizer
 import pandas as pd
 from sqlalchemy import text
-from sqthon.services import start_service, stop_service
+from sqthon.util import create_table_from_csv
+from typing import Optional
 
 
 # TODO: Exception Handling
@@ -12,38 +13,63 @@ from sqthon.services import start_service, stop_service
 
 
 class Sqthon:
-    def __init__(self, dialect: str, driver: str, service_instance_name: str = None):
+    def __init__(self,
+                 dialect: str,
+                 service_instance_name: str = None):
         self.dialect = dialect
-        self.driver = driver
-        self.connect_db = DatabaseConnector(dialect, driver, service_instance_name)
+        self.connect_db = DatabaseConnector(dialect, service_instance_name)
         self.visualizer = DataVisualizer()
 
+    def create_db(self, database: str):
+        with self.connect_db.server_level_engine().connect() as connection:
+            connection.execute(text(f"CREATE DATABASE {database};"))
 
-    def create_db(self):
-        ...
+    def drop_db(self, database: str):
+        with self.connect_db.server_level_engine().connect() as connection:
+            connection.execute(text(f"DROP DATABASE {database};"))
+
+    def import_csv_to_db(self,
+                         table_name: str,
+                         csv_path: str,
+                         database: str,
+                         delimiter: Optional[str] = None,
+                         enclosed_by: Optional[str] = None):
+
+        """import a csv file to a specific database.
+           Parameters:
+               - table_name (str): Name of the table you want to create.
+               - csv_path (str): Location of the csv file.
+               - database (str): Name of the database where you want to create.
+        """
+        # Caution: MySQL expects dates in 'YYYY-MM-DD'
+
+        table = create_table_from_csv(engine=self.connect_db.connections[database],
+                                      path=csv_path,
+                                      table_name=table_name)
 
 
-    def data_types(self, path):
-        ...
+        col_names = tuple(col.name for col in table.columns if col.name != "id")
+        col_names_clause = f"({', '.join(col_names)})"
 
-    def import_to_db(self, database: str):
-        ...
-
-
-    def create_table(self):
-        ...
-
-
+        # import_query = text(f"""
+        # LOAD DATA LOCAL INFILE {csv_path}
+        # INTO TABLE {table}
+        # FIELDS TERMINATED BY ','
+        # ENCLOSED BY '"'
+        # LINES TERMINATED BY '\n'
+        # IGNORE 1 ROWS
+        # {col_names_clause}
+        # """)
 
     def connect_to_database(self, database: str):
         """Connect to specific database on the server."""
         self.database = database
         try:
             self.connect_db.connect(database)
+            return self
         except Exception as e:
             print(f"Error connecting to database: {database}: {e}")
             traceback.print_exc()
-
 
     def run_query(self,
                   query: str,
@@ -86,7 +112,6 @@ class Sqthon:
             print(f"Error executing query: {e}")
             return None
 
-
     def describe_table(self, table_name: str) -> pd.DataFrame:
         """
         Describe the structure of a database table.
@@ -100,7 +125,6 @@ class Sqthon:
 
         query = f"DESCRIBE {table_name}"
         return self.run_query(query=query)
-
 
     def list_tables(self) -> list:
         """
@@ -118,7 +142,6 @@ class Sqthon:
 
         result = self.run_query(query)
         return result.values.flatten().tolist() if result is not None else []
-
 
     def to_datetime(self, df, column):
         """
@@ -138,12 +161,8 @@ class Sqthon:
             print(f"Error converting column {column} to datetime: {e}")
             return df
 
-
     def show_connections(self):
         return [key for key in self.connect_db.connections]
 
-
     def disconnect_database(self, database):
         self.connect_db.disconnect(database)
-
-

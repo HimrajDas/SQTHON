@@ -7,8 +7,9 @@ from sqlalchemy import inspect
 import json
 
 
-# TODO: use RE to extract the plain query from the bullshit, the model return sometimes.
+# TODO: use RE to extract the plain query from the bullshit, the model return most of the times.
 # TODO: add server starting feature in llm.
+# TODO: need to rewrite llm.
 
 class SqthonAI(Sqthon):
     def __init__(self, dialect: str, driver: str, database: str, model: str):

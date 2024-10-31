@@ -33,6 +33,6 @@ import sys
 print(sys.executable)
 
 
-from sqthon.admin import _is_admin
+from sqthon.services import is_admin
 
-print(_is_admin)
+print(is_admin)
