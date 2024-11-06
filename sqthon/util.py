@@ -2,9 +2,12 @@ import pandas as pd
 from sqlalchemy.engine import Engine
 from sqlalchemy import (
     MetaData, Column, Table, Integer, BigInteger, Float, Numeric, String, Text, Boolean,
-    DateTime, Date, Time, TIMESTAMP, JSON, ARRAY, LargeBinary, Interval
+    DateTime, Date, Time, TIMESTAMP, JSON, ARRAY, LargeBinary, Interval, text
 )
 
+from sqthon.connection import DatabaseConnector
+from sqlalchemy.exc import OperationalError, SQLAlchemyError
+import traceback
 
 def map_dtype_to_sqlalchemy(dtype):
     """
@@ -19,10 +22,10 @@ def map_dtype_to_sqlalchemy(dtype):
     dtype_str = str(dtype).lower()
 
     # Numeric types
-    if 'int8' in dtype_str or 'int16' in dtype_str or 'int32' in dtype_str:
+    if 'int' in dtype_str:
         return Integer()
-    elif 'int64' in dtype_str or 'uint64' in dtype_str:
-        return BigInteger()
+    # elif 'int64' in dtype_str or 'uint64' in dtype_str:
+    #     return BigInteger()
     elif 'float' in dtype_str:
         return Float(precision=53)
     elif 'decimal' in dtype_str:
@@ -70,10 +73,38 @@ def map_dtype_to_sqlalchemy(dtype):
     else:
         return Text()
 
+    # def map_dtype_to_sqlalchemy(dtype):
+    #     dtype_str = str(dtype).lower()
+    #     # Define a mapping dictionary
+    #     dtype_map = {
+    #         'int8': Integer(),
+    #         'int16': Integer(),
+    #         'int32': Integer(),
+    #         'int64': BigInteger(),
+    #         'uint64': BigInteger(),
+    #         'float': Float(precision=53),
+    #         'decimal': Numeric(precision=38, scale=10),
+    #         'bool': Boolean(),
+    #         'datetime64[ns]': DateTime(),
+    #         'timedelta': Interval(),
+    #         'date': Date(),
+    #         'time': Time(),
+    #         'string': String(length=255),
+    #         'object': String(length=255),
+    #         'category': String(length=64),
+    #         'complex': String(length=100),
+    #         'bytes': LargeBinary()
+    #     }
+    #
+    #     # Handle JSON type for dictionaries/lists
+    #     if pd.api.types.is_dict_like(pd.Series([{}, None])) or pd.api.types.is_list_like(pd.Series([[], None])):
+    #         return JSON()
+
+    #     return dtype_map.get(dtype_str, Text())
 
 
-def create_table_from_csv(self,
-                          path: str,
+
+def create_table_from_csv(path: str,
                           table_name: str,
                           engine: Engine,
                           key: bool = False) -> Table:
@@ -105,3 +136,32 @@ def create_table_from_csv(self,
     return table
 
 
+
+# def map_dtype_to_sqlalchemy(dtype):
+#     dtype_str = str(dtype).lower()
+#     # Define a mapping dictionary
+#     dtype_map = {
+#         'int8': Integer(),
+#         'int16': Integer(),
+#         'int32': Integer(),
+#         'int64': BigInteger(),
+#         'uint64': BigInteger(),
+#         'float': Float(precision=53),
+#         'decimal': Numeric(precision=38, scale=10),
+#         'bool': Boolean(),
+#         'datetime64[ns]': DateTime(),
+#         'timedelta': Interval(),
+#         'date': Date(),
+#         'time': Time(),
+#         'string': String(length=255),
+#         'object': String(length=255),
+#         'category': String(length=64),
+#         'complex': String(length=100),
+#         'bytes': LargeBinary()
+#     }
+#
+#     # Handle JSON type for dictionaries/lists
+#     if pd.api.types.is_dict_like(pd.Series([{}, None])) or pd.api.types.is_list_like(pd.Series([[], None])):
+#         return JSON()
+
+#     return dtype_map.get(dtype_str, Text())
