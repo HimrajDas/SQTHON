@@ -1,13 +1,14 @@
 import pandas as pd
-from sqlalchemy.engine import Engine
 from sqlalchemy import (
-    MetaData, Column, Table, Integer, BigInteger, Float, Numeric, String, Text, Boolean,
-    DateTime, Date, Time, TIMESTAMP, JSON, ARRAY, LargeBinary, Interval, text
+    MetaData, Column, Table, Integer, Float, Numeric, String, Text, Boolean,
+    DateTime, Date, Time, JSON, ARRAY, LargeBinary, Interval, Engine, text
 )
 
 from sqthon.connection import DatabaseConnector
-from sqlalchemy.exc import OperationalError, SQLAlchemyError
+from sqlalchemy.exc import OperationalError, SQLAlchemyError, DataError, ProgrammingError, IntegrityError
 import traceback
+import csv
+
 
 def map_dtype_to_sqlalchemy(dtype):
     """
@@ -73,36 +74,6 @@ def map_dtype_to_sqlalchemy(dtype):
     else:
         return Text()
 
-    # def map_dtype_to_sqlalchemy(dtype):
-    #     dtype_str = str(dtype).lower()
-    #     # Define a mapping dictionary
-    #     dtype_map = {
-    #         'int8': Integer(),
-    #         'int16': Integer(),
-    #         'int32': Integer(),
-    #         'int64': BigInteger(),
-    #         'uint64': BigInteger(),
-    #         'float': Float(precision=53),
-    #         'decimal': Numeric(precision=38, scale=10),
-    #         'bool': Boolean(),
-    #         'datetime64[ns]': DateTime(),
-    #         'timedelta': Interval(),
-    #         'date': Date(),
-    #         'time': Time(),
-    #         'string': String(length=255),
-    #         'object': String(length=255),
-    #         'category': String(length=64),
-    #         'complex': String(length=100),
-    #         'bytes': LargeBinary()
-    #     }
-    #
-    #     # Handle JSON type for dictionaries/lists
-    #     if pd.api.types.is_dict_like(pd.Series([{}, None])) or pd.api.types.is_list_like(pd.Series([[], None])):
-    #         return JSON()
-
-    #     return dtype_map.get(dtype_str, Text())
-
-
 
 def create_table_from_csv(path: str,
                           table_name: str,
@@ -136,32 +107,49 @@ def create_table_from_csv(path: str,
     return table
 
 
+def import_csv_to_mysqltable(user: str,
+                             host: str,
+                             csv_path: str,
+                             database: str,
+                             table: str,
+                             service_instance: str = None):
+    """Imports a CSV file to a database table using local data infile."""
+    dbc = DatabaseConnector(dialect="mysql", user=user, host=host, service_instance_name=service_instance)
+    engine = dbc.server_level_engine(database=database, local_infile=True)
 
-# def map_dtype_to_sqlalchemy(dtype):
-#     dtype_str = str(dtype).lower()
-#     # Define a mapping dictionary
-#     dtype_map = {
-#         'int8': Integer(),
-#         'int16': Integer(),
-#         'int32': Integer(),
-#         'int64': BigInteger(),
-#         'uint64': BigInteger(),
-#         'float': Float(precision=53),
-#         'decimal': Numeric(precision=38, scale=10),
-#         'bool': Boolean(),
-#         'datetime64[ns]': DateTime(),
-#         'timedelta': Interval(),
-#         'date': Date(),
-#         'time': Time(),
-#         'string': String(length=255),
-#         'object': String(length=255),
-#         'category': String(length=64),
-#         'complex': String(length=100),
-#         'bytes': LargeBinary()
-#     }
-#
-#     # Handle JSON type for dictionaries/lists
-#     if pd.api.types.is_dict_like(pd.Series([{}, None])) or pd.api.types.is_list_like(pd.Series([[], None])):
-#         return JSON()
+    # TODO: Need to handle -> MySQL expects dates in 'YYYY-MM-DD'.
+    table = create_table_from_csv(engine=engine, table_name=table, path=csv_path)
 
-#     return dtype_map.get(dtype_str, Text())
+    with open(csv_path, "r", newline='', encoding='utf-8') as csv_file:
+        reader = csv.reader(csv_file)
+        header = next(reader)
+        col_names = ', '.join([f"`{name.strip().replace('\"', '')}`" for name in header])
+
+    query = text(f"""
+    LOAD DATA LOCAL INFILE '{csv_path}'
+    INTO TABLE {table}
+    FIELDS TERMINATED BY ','
+    LINES TERMINATED BY '\\n'
+    IGNORE 1 ROWS
+    ({col_names})
+    """)
+
+    try:
+        with engine.connect() as connection:
+            with connection.begin():
+                connection.execute(query)
+    except OperationalError:
+        print("Failed to connect to the server.")
+    except FileNotFoundError:
+        print("CSV file not found. Please check the file path.")
+    except PermissionError:
+        print("MySQL user lacks FILE privilege. Enable it to use this feature.")
+    except DataError:
+        print("Data format error. Ensure dates are in 'YYYY-MM-DD'.")
+    except ProgrammingError:
+        print("SQL syntax error or mismatched column names.")
+    except IntegrityError:
+        print("Data violates a table constraint.")
+    except Exception as e:
+        print(f"An error occurred while importing the csv: {e}")
+        traceback.print_exc()

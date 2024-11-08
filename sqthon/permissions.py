@@ -8,22 +8,32 @@ from typing import Literal
 
 class PermissionManager:
     """
-    A class responsible for managing database user permissions, including granting and revoking specific privileges.
+        A class for managing database user permissions, particularly the FILE privilege, for MySQL and PostgreSQL databases.
 
-    This class is used to handle administrative tasks related to database permissions, such as granting the FILE privilege
-    or managing access controls for specific users on the database server.
+        The PermissionManager class provides methods to grant, revoke, and verify the FILE privilege for specified users,
+        making it useful for handling database security configurations and access control.
 
-    Methods:
-        - grant_file_permission: Grants the FILE privilege to a specified user.
-        - revoke_file_permission: Revokes the FILE privilege from a specified user.
-        - check_file_permission: Checks if the FILE privilege is granted to a user.
-
-    Attributes:
-        dialect (str): The database dialect (e.g., 'mysql', 'postgresql').
-        service_instance_name (str): The name of the service instance to be used for connecting to the database.
-    """
+        Attributes:
+            dialect (str): The database dialect, such as 'mysql' or 'postgresql'.
+            user (str): The username for the database connection.
+            host (str): The host address of the database server.
+            driver (str): The database driver, set automatically based on the dialect.
+        """
 
     def __init__(self, dialect: str, user: str, host: str):
+        """
+        Initializes the DatabaseConnector instance with specified connection parameters.
+
+        Parameters:
+            dialect (str): The database dialect ('mysql' or 'postgresql').
+            user (str): The database user for authentication.
+            host (str): The host address of the database.
+
+        Important:
+            To enhance security, avoid hardcoding sensitive information like passwords in your code.
+            Store the database password in a `.env` file using the format '<username>password=yourpassword'
+            and load it using `dotenv`. This will be accessed as an environment variable.
+        """
         load_dotenv()
         self.user = user
         self.host = host
@@ -62,7 +72,7 @@ class PermissionManager:
         return global_infile.lower() == "on"
 
 
-    def infile_mode(self, mode: Literal["on", "off"]):
+    def global_infile_mode(self, mode: Literal["on", "off"]):
         """Enable or disable GLOBAL local_infile."""
         if mode.lower() == "on":
             with self._engine().connect() as conn:
@@ -70,6 +80,18 @@ class PermissionManager:
         elif mode.lower() == "off":
             with self._engine().connect() as conn:
                 conn.execute(text("SET GLOBAL local_infile = 0"))
+        else:
+            raise ValueError("Invalid mode. Expected 'on' or 'off'.")
+
+
+    def session_local_infile(self, mode: Literal["on", "off"]):
+        """Enable or disable SESSION local_infile."""
+        if mode.lower() == "on":
+            with self._engine().connect() as conn:
+                conn.execute(text("SET SESSION local_infile = 1"))
+        elif mode.lower() == "off":
+            with self._engine().connect() as conn:
+                conn.execute(text("SET SESSION local_infile = 0"))
         else:
             raise ValueError("Invalid mode. Expected 'on' or 'off'.")
 
