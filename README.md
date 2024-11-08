@@ -1,3 +1,9 @@
+# SQTHON
+
+Connect to multiple databases, make raw SQL queries and make visualization.
+
+`inline code`
+
 <img src="assets/2.png"  align="center" width="150"  alt="Sqthon logo"/>
 
 # Sqthon

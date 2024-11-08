@@ -114,7 +114,7 @@ def start_service(service_name: str):
             _runAsAdmin(service_name, "start")
             return True
         except Exception as e:
-            print(f"{e}")
+            print(f"Error occurred: {e}")
 
 
 def stop_service(service_name: str):

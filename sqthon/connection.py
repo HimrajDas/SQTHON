@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 from sqlalchemy import create_engine, URL, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import OperationalError
+from typing import Optional
 
 
 # TODO: add support for other dialects.
@@ -66,31 +67,49 @@ class DatabaseConnector:
             database=database
         )
 
-
         connection_args = {
             "local_infile": local_infile,
         }
 
         return create_engine(url_object, connect_args=connection_args, pool_recycle=3600)
 
+    def server_level_engine(self, database: str = None, local_infile: bool = False) -> Engine:
+        """Use this engine for server level one-time operation.
+
+        Parameters:
+        database (str, optional): The database name. If not provided, the engine will be created without a specific
+                                  database.
+        local_infile (bool): whether to enable or disable local data infile.
+
+        Returns:
+        Engine: The SQLAlchemy engine for server-level operations.
+        """
+
+        if database:
+            url_object = URL.create(
+                    f"{self.dialect}+{self.driver}",
+                    username=self.user,
+                    password=os.getenv(f"{self.user}password"),
+                    host=self.host,
+                    database=database
+            )
+        else:
+            url_object = URL.create(
+                f"{self.dialect}+{self.driver}",
+                username=self.user,
+                password=os.getenv(f"{self.user}password"),
+                host=self.host,
+            )
 
 
-    def server_level_engine(self) -> Engine:
-        """Use this engine only for server level operation."""
-        url_object = URL.create(
-            f"{self.dialect}+{self.driver}",
-            username=self.user,
-            password=os.getenv(f"{self.user}password"),
-            host=self.host,
-        )
+        args = {
+            "local_infile": local_infile
+        }
 
-        return create_engine(url_object, pool_recycle=3000)
-
-
+        return create_engine(url_object, connect_args=args)
 
     def _sqlite_engine(self):
         ...
-
 
     def connect(self, database: str, local_infile: bool = False):
         if database not in self.connections or self.connections[database].closed:
@@ -110,13 +129,12 @@ class DatabaseConnector:
                     self.connections[database] = self.engines[database].connect()
                     return self.connections[database]
                 except Exception as e:
-                    raise RuntimeError(f"Not able established the server! Try to start manually.\n{e}")
+                    raise RuntimeError(f"Not able established the server! Try to start manually.")
 
         return self.connections[database]
 
     def enable_global_infile(self):
         ...
-
 
     def disconnect(self, database):
         if database in self.connections and self.connections[database] is not None:

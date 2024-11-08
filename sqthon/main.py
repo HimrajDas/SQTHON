@@ -3,10 +3,10 @@ from pandas import DataFrame
 from sqthon.connection import DatabaseConnector
 from sqthon.data_visualizer import DataVisualizer
 import pandas as pd
-from sqlalchemy import text
+from sqlalchemy import text, DDL
 from sqthon.util import create_table_from_csv
 from typing import Optional
-from sqlalchemy.exc import OperationalError
+from sqlalchemy.exc import OperationalError, DataError, ProgrammingError, IntegrityError
 import csv
 
 
@@ -53,52 +53,6 @@ class Sqthon:
         with self.connect_db.server_level_engine().connect() as connection:
             connection.execute(text(f"DROP DATABASE {database};"))
 
-
-    def import_csv_to_db(self,
-                         table_name: str,
-                         csv_path: str,
-                         database: str):
-
-        """import a csv file to a specific database using LOAD DATA LOCAL INFILE.
-
-        Note: to use this method, the MySQL user must have the 'FILE' privilege enabled globally
-        to allow file import operation.
-           Parameters:
-               - table_name (str): Name of the table you want to create.
-               - csv_path (str): Location of the csv file.
-               - database (str): Name of the database where you want to create.
-        """
-        # TODO: Need to handle -> MySQL expects dates in 'YYYY-MM-DD'.
-
-        connection = self.connect_db.connect(database, local_infile=True)
-        try:
-            table = create_table_from_csv(engine=connection,
-                                          path=csv_path,
-                                          table_name=table_name)
-
-            with open(csv_path, "r", newline='', encoding='utf-8') as csv_file:
-                reader = csv.reader(csv_file)
-                header = next(reader)
-                col_names = ', '.join([f"`{name.strip().replace('\"', '')}`" for name in header])
-
-
-            import_query = text(f"""
-            LOAD DATA LOCAL INFILE '{csv_path}'
-            INTO TABLE {table}
-            FIELDS TERMINATED BY ','
-            LINES TERMINATED BY '\n'
-            IGNORE 1 ROWS
-            ({col_names})
-            """)
-
-            connection.execute(import_query)
-            row_count_query = text(f"SELECT COUNT(*) FROM {table_name}")
-            row_count = connection.execute(row_count_query).scalar()
-
-            print(f"Data load completed: {row_count} rows in table '{table_name}'")
-        except Exception as e:
-            print(f"An error occured while importing the csv: {e}")
-            traceback.print_exc()
 
 
     def connect_to_database(self, database: str, local_infile: bool = False):
