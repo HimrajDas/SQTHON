@@ -3,15 +3,13 @@ from pandas import DataFrame
 from sqthon.connection import DatabaseConnector
 from sqthon.data_visualizer import DataVisualizer
 import pandas as pd
-from sqlalchemy import text, DDL
-from sqthon.util import create_table_from_csv
-from typing import Optional
+from sqlalchemy import text, Engine
 from sqlalchemy.exc import OperationalError, DataError, ProgrammingError, IntegrityError
-import csv
 
 
 # TODO: Exception Handling.
 # TODO: Need to add sqlite connection.
+# TODO: add method for describing and show tables.
 
 
 class Sqthon:
@@ -28,102 +26,66 @@ class Sqthon:
                                             host=self.host,
                                             service_instance_name=service_instance_name)
         self.visualizer = DataVisualizer()
-
+        self.connections = {}
 
     def create_db(self, database: str):
         try:
             with self.connect_db.server_level_engine().connect() as connection:
-                connection.execute(text(f"CREATE DATABASE IF NOT EXISTS {database};"))  # works for mysql
+                try:
+                    if self.dialect.lower() == "mysql":
+                        connection.execute(text(f"CREATE DATABASE IF NOT EXISTS {database};"))
+                    elif self.dialect.lower() == "postgresql":
+                        if not connection.execute(
+                                text(f"SELECT 1 FROM pg_database WHERE datname = '{database}'")).scalar():
+                            connection.execute(text(f"CREATE DATABASE {database}"))
+                except ProgrammingError as e:
+                    print(f"Programming error: {e}")
         except OperationalError:
             print("Server is not running.")
 
-        # TODO: add for postgresql
-
-
-    def show_db(self):
+    def show_dbs(self):
         try:
             with self.connect_db.server_level_engine().connect() as connection:
-                dbs = connection.execute(text(f"SHOW DATABASES;")).fetchall()
-            return [db[0] for db in dbs]
+                if self.dialect.lower() == "mysql":
+                    dbs = connection.execute(text(f"SHOW DATABASES;")).fetchall()
+                elif self.dialect.lower() == "postgresql":
+                    dbs = connection.execute((text("SELECT datname FROM pg_database;")))
         except OperationalError:
             print("Server is not running.")
 
+        return [db[0] for db in dbs]
 
     def drop_db(self, database: str):
         with self.connect_db.server_level_engine().connect() as connection:
             connection.execute(text(f"DROP DATABASE {database};"))
 
-
-
     def connect_to_database(self, database: str, local_infile: bool = False):
         """Connect to specific database on the server."""
-        self.database = database
         try:
-            self.connect_db.connect(database, local_infile)
-            return self
+            connection = self.connect_db.connect(database=database, local_infile=local_infile)
+            self.connections[database] = DatabaseContext(parent=self, database=database, connection=connection)
         except Exception as e:
             print(f"Error connecting to database: {database}: {e}")
             traceback.print_exc()
 
-
-    def describe_table(self, table_name: str) -> pd.DataFrame:
-        """
-        Describe the structure of a database table.
-
-        Args:
-        table_name (str): The name of the table to describe.
-
-        Returns:
-        pd.DataFrame: A dataframe containing the table structure description.
-        """
-
-        query = f"DESCRIBE {table_name}"
-        return self.run_query(query=query)
-
-
-    def list_tables(self) -> list:
-        """
-        List all tables in the connected database.
-
-        Returns:
-        list: A list of table names in the database.
-        """
-        if self.dialect.lower() == 'mysql':
-            query = "SHOW TABLES"
-        elif self.dialect.lower() == 'postgresql':
-            query = "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'"
-        else:
-            raise ValueError(f"Listing tables for {self.dialect} is not implemented.")
-
-        result = self.run_query(query)
-        return result.values.flatten().tolist() if result is not None else []
-
-
-    def to_datetime(self, df, column):
-        """
-        Convert a column in a DataFrame to datetime type.
-
-        Args:
-        df (pd.DataFrame): The DataFrame containing the column to convert.
-        column (str): The name of the column to convert to datetime.
-
-        Returns:
-        pd.DataFrame: The DataFrame with the specified column converted to datetime.
-        """
-        try:
-            df[column] = pd.to_datetime(df[column])
-            return df
-        except Exception as e:
-            print(f"Error converting column {column} to datetime: {e}")
-            return df
+        return self.connections[database]
 
 
     def show_connections(self):
         return [key for key in self.connect_db.connections]
 
-
     def disconnect_database(self, database):
         self.connect_db.disconnect(database)
+
+
+
+class DatabaseContext:
+    """Context-specific sub-instance for a specific database."""
+
+    def __init__(self, parent: Sqthon, database: str, connection: Engine):
+        self.parent = parent
+        self.database = database
+        self.connection = connection
 
 
     def run_query(self,
@@ -156,14 +118,17 @@ class Sqthon:
         """
 
         try:
-            result = pd.read_sql_query(text(query), self.connect_db.connections[self.database])
+            result = pd.read_sql_query(text(query), self.connection)
             if visualize:
                 if not all([plot_type, x, y]):
                     raise ValueError("For visualization, please provide plot_type, x, y.")
                 self.visualizer.plot(result, plot_type, x, y, title, **kwargs)
 
             return result
+
+        except ProgrammingError as e:
+            print(f"Programming error: {e}")
         except Exception as e:
+            # TODO: Make exception handling better. SQL syntax errors.
             print(f"Error executing query: {e}")
             return None
-

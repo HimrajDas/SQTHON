@@ -153,3 +153,31 @@ def import_csv_to_mysqltable(user: str,
     except Exception as e:
         print(f"An error occurred while importing the csv: {e}")
         traceback.print_exc()
+
+
+    def to_datetime(df, column):
+        """
+        Convert a column in a DataFrame to datetime type.
+
+        Args:
+        df (pd.DataFrame): The DataFrame containing the column to convert.
+        column (str): The name of the column to convert to datetime.
+
+        Returns:
+        pd.DataFrame: The DataFrame with the specified column converted to datetime.
+        """
+        try:
+            df[column] = pd.to_datetime(df[column])
+            return df
+        except Exception as e:
+            print(f"Error converting column {column} to datetime: {e}")
+            return df
+
+
+def import_csv_to_posgresql(user: str,
+                            host: str,
+                            csv_path: str,
+                            database: str,
+                            table: str,
+                            service_instance: str = None):
+    ...

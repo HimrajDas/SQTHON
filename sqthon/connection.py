@@ -2,11 +2,11 @@ import os
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, URL, text
 from sqlalchemy.engine import Engine
-from sqlalchemy.exc import OperationalError
+from sqlalchemy.exc import OperationalError, ArgumentError
 from typing import Optional
 
 
-# TODO: add support for other dialects.
+# TODO: Dialects to be added: SQlite, Oracle, Microsoft SQL Server.
 # TODO: think about setting isolation_level for connections.
 # TODO: support for encrypted connections.
 # TODO: Exception handling
@@ -51,30 +51,44 @@ class DatabaseConnector:
         self.engines = {}
         self.connections = {}
 
-        if self.dialect == "mysql":
+        if self.dialect.lower() == "mysql":
             self.driver = "pymysql"
-        elif self.dialect == "postgresql":
+        elif self.dialect.lower() == "postgresql":
             self.driver = "psycopg2"
-        # TODO: do this for other drivers.
+        elif self.dialect.lower() == "sqlite":
+            self.driver = None
 
     def _create_engine(self, database: str, local_infile: bool) -> Engine:
 
-        url_object = URL.create(
-            f"{self.dialect}+{self.driver}",
-            username=self.user,
-            password=os.getenv(f"{self.user}password"),
-            host=self.host,
-            database=database
-        )
+        try:
 
-        connection_args = {
-            "local_infile": local_infile,
-        }
+            if self.dialect.lower() == "sqlite":
+                return create_engine(f"sqlite:///{database}")
 
-        return create_engine(url_object, connect_args=connection_args, pool_recycle=3600)
+            # TODO: if more than one same username exists then password fetching gonna give problems.
+            password = os.getenv(f"{self.user}password")
+            if not password:
+                raise ValueError(f"Password for user '{self.user}' not found in environment variables.")
+
+            url_object = URL.create(
+                f"{self.dialect}+{self.driver}",
+                username=self.user,
+                password=password,
+                host=self.host,
+                database=database
+            )
+
+            connection_args = {
+                "local_infile": local_infile,
+            }
+
+            return create_engine(url_object, connect_args=connection_args, pool_recycle=3600)
+        except ArgumentError as ae:
+            print(f"Incorrect arguments: {ae}")
 
     def server_level_engine(self, database: str = None, local_infile: bool = False) -> Engine:
         """Use this engine for server level one-time operation.
+        It's good to use this method using context manager.
 
         Parameters:
         database (str, optional): The database name. If not provided, the engine will be created without a specific
@@ -84,29 +98,31 @@ class DatabaseConnector:
         Returns:
         Engine: The SQLAlchemy engine for server-level operations.
         """
-
-        if database:
-            url_object = URL.create(
+        try:
+            if database:
+                url_object = URL.create(
+                        f"{self.dialect}+{self.driver}",
+                        username=self.user,
+                        password=os.getenv(f"{self.user}password"),
+                        host=self.host,
+                        database=database
+                )
+            else:
+                url_object = URL.create(
                     f"{self.dialect}+{self.driver}",
                     username=self.user,
                     password=os.getenv(f"{self.user}password"),
                     host=self.host,
-                    database=database
-            )
-        else:
-            url_object = URL.create(
-                f"{self.dialect}+{self.driver}",
-                username=self.user,
-                password=os.getenv(f"{self.user}password"),
-                host=self.host,
-            )
+                )
 
 
-        args = {
-            "local_infile": local_infile
-        }
+            args = {
+                "local_infile": local_infile
+            }
 
-        return create_engine(url_object, connect_args=args)
+            return create_engine(url_object, connect_args=args)
+        except ArgumentError as ae:
+            print(f"Incorrect arguments: {ae}")
 
     def _sqlite_engine(self):
         ...

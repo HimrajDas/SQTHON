@@ -19,6 +19,7 @@ class DataVisualizer:
             figsize: Tuple[float, float] = (10, 6),
             theme: Optional[str] = None,
             palette: Optional[str] = None,
+            yticks: Optional[list] = None,
             **kwargs: Any
     ) -> None:
         """
@@ -33,6 +34,7 @@ class DataVisualizer:
             figsize (Tuple[float, float]): The size of the figure in inches.
             theme (str, optional): The seaborn theme to use.
             palette (str, optional): The color palette to use.
+            yticks (list, optional): adjust the scale of y-axis.
             **kwargs: Additional keyword arguments for the specific plot type.
 
         Returns:
@@ -89,6 +91,9 @@ class DataVisualizer:
         if x and len(data[x].unique()) > 10:
             plt.xticks(rotation=45, ha='right')
 
+        if yticks:
+            ax.set_yticks(yticks)
+
         plt.tight_layout()
         plt.show()
 
@@ -99,7 +104,8 @@ class DataVisualizer:
             title: str = "",
             figsize: Tuple[float, float] = (15, 10),
             theme: Optional[str] = None,
-            palette: Optional[str] = None
+            palette: Optional[str] = None,
+            yticks: Optional[list] = None
     ) -> None:
         """
         Create multiple plots in a single figure.
@@ -112,6 +118,7 @@ class DataVisualizer:
             figsize (Tuple[float, float]): The size of the figure in inches.
             theme (str, optional): The seaborn theme to use.
             palette (str, optional): The color palette to use.
+            yticks (list, optional): adjust the scale of y-axis.
 
         Returns:
             None
@@ -161,6 +168,9 @@ class DataVisualizer:
         for i in range(n_plots, len(axes)):
             fig.delaxes(axes[i])
 
+        if yticks:
+            axes.set_yticks(yticks)
+
         plt.suptitle(title, fontsize=16)
         plt.tight_layout()
         plt.show()
@@ -170,12 +180,14 @@ class DataVisualizer:
             data: pd.DataFrame,
             x: str,
             y_vars: list,
+            plot_type: Literal["scatter", "line", "bar"],
             var_name: str = "variable",
             value_name: str = "value",
             title: str = "",
             figsize: Tuple[float, float] = (10, 6),
             theme: Optional[str] = None,
             palette: Optional[str] = None,
+            yticks: Optional[list] = None,
             **kwargs: Any
     ) -> None:
         """
@@ -191,6 +203,7 @@ class DataVisualizer:
             figsize (Tuple[float, float]): The size of the figure in inches.
             theme (str, optional): The seaborn theme to use.
             palette (str, optional): The color palette to use.
+            yticks (list, optional): adjust the scale of y-axis.
             **kwargs: Additional keyword arguments for the line plot.
 
         Returns:
@@ -207,7 +220,12 @@ class DataVisualizer:
 
         fig, ax = plt.subplots(figsize=figsize)
 
-        sns.lineplot(data=melted_data, x=x, y=value_name, hue=var_name, ax=ax, **kwargs)
+        if plot_type == "line":
+            sns.lineplot(data=melted_data, x=x, y=value_name, hue=var_name, ax=ax, **kwargs)
+        elif plot_type == "bar":
+            sns.barplot(data=melted_data, x=x, y=value_name, hue=var_name, ax=ax, **kwargs)
+        elif plot_type == "scatter":
+            sns.scatterplot(data=melted_data, x=x, y=value_name, hue=var_name, ax=ax, **kwargs)
 
         plt.title(title)
         plt.xlabel(x)
@@ -217,5 +235,9 @@ class DataVisualizer:
         if len(data[x].unique()) > 10:
             plt.xticks(rotation=45, ha='right')
 
+        if yticks:
+            ax.set_yticks(yticks)
+
         plt.tight_layout()
         plt.show()
+
