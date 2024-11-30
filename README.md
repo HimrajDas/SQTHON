@@ -6,6 +6,7 @@
 - ### **_SqthonAI_**: _generate SQL queries using a LLM of your choice._ 🤖
 - #### **Security improvements**💀
 - #### **New Features**
+- #### **custom exception for better error showcase** 🙄
 
 ### Package is not published to pypi yet and is being made using poetry. 🍕
 ### Currently, this package will work on windows only.
@@ -115,3 +116,36 @@ dv.plot(data=yearly_sales, plot_type="line", x="sales_year", y="sales", hue="kin
 
 
 ### _5. Importing CSV to a Table_.
+**I have isolated this feature for several security reasons. What do I mean is that it uses a separate
+engine to import the csv to a table which you don't need to worry about 😎** 
+
+> It exists in the **_util.py_** as a separate method devoid of life from others.
+> Currently it supports **_mysql_** only.
+
+#### Method Name: **_import_csv_to_mysqltable_**
+#### Params it has:
+* user: str        
+* host: str  
+* database: str
+* csv_path: str
+* service_instance: str = None
+* table: str
+
+**user**: username,
+**host**: host,
+**database**: database name, 
+**csv_path**: relative or absolute path to the csv file.
+>**table**: table name, if it doesn't exist then it will create the table according to the csv file.
+>You don't need to worry about data types. It will handle it.
+
+```python
+from sqthon.util import import_csv_to_mysqltable
+# just call the method with correct args. Password fetched automatically.
+import_csv_to_mysqltable(user="dummy",
+                         host="host",
+                         database="dummy",
+                         csv_path="universe/milkyway/our_solar_system/earth",
+                         service_instance="your service instance",
+                         table="table")  # if table don't exist it will create it according 
+                                        # the csv file holds.                       
+```
