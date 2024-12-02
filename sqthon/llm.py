@@ -9,7 +9,8 @@ import json
 
 # TODO: use RE to extract the plain query from the bullshit, the model return most of the times.
 # TODO: add server starting feature in llm.
-# TODO: need to rewrite llm. (Current implementation not gonna work)
+# TODO: need to rewrite llm. (Current implementation not gonna work).
+# TODO: Test openai api first, then sqlcoder.
 
 class SqthonAI(Sqthon):
     def __init__(self, dialect: str, driver: str, database: str, model: str):

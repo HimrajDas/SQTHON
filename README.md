@@ -1,9 +1,10 @@
 # _SQTHON_
 
+
 ### _Connect to multiple databases, run raw SQL queries, perform analysis and make visualization._
 
 ## _Currently working on:_
-- ### **_SqthonAI_**: _generate SQL queries using a LLM of your choice._ 🤖
+- ### **_SqthonAI_**: _generate SQL queries using a LLM of your choice_ 🤖
 - #### **Security improvements**💀
 - #### **New Features**
 - #### **custom exception for better error showcase** 🙄
@@ -137,6 +138,18 @@ engine to import the csv to a table which you don't need to worry about 😎**
 **csv_path**: relative or absolute path to the csv file.
 >**table**: table name, if it doesn't exist then it will create the table according to the csv file.
 >You don't need to worry about data types. It will handle it.
+
+> To import a file to mysql, you need to enable global infile both in server and client. In **_client_**
+> you turns on when you set **infile=True** in connect to database.
+
+#### To enable global infile in the server, just do this:
+```python
+from sqthon.permissions import PermissionManager
+permission = PermissionManager(dialect, user, host)
+permission.global_infile_mode(mode="on")  # mode accepts one of two values only: "on" or "off"
+```
+
+Take a look at the **permissions.py** file, you will see methods available for infile modes.
 
 ```python
 from sqthon.util import import_csv_to_mysqltable

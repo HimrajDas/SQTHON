@@ -74,8 +74,13 @@ class Sqthon:
     def show_connections(self):
         return [key for key in self.connect_db.connections]
 
+
     def disconnect_database(self, database):
         self.connect_db.disconnect(database)
+
+
+    def crud(self):
+        ...
 
 
 
