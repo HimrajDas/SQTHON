@@ -127,7 +127,7 @@ class DatabaseConnector:
     def _sqlite_engine(self):
         ...
 
-    def connect(self, database: str, local_infile: bool = False):
+    def connect(self, database: str, local_infile: bool):
         if database not in self.connections or self.connections[database].closed:
             try:
                 if database not in self.engines:
@@ -149,8 +149,6 @@ class DatabaseConnector:
 
         return self.connections[database]
 
-    def enable_global_infile(self):
-        ...
 
     def disconnect(self, database):
         if database in self.connections and self.connections[database] is not None:
@@ -160,3 +158,9 @@ class DatabaseConnector:
                 print(f"Error closing the connection: {e}")
             finally:
                 del self.connections[database]
+
+
+    def dispose_engine(self, database: str):
+        """Permanently disposes an engine."""
+        if database in self.engines and self.engines[database] is not None:
+            self.engines[database].dispose()

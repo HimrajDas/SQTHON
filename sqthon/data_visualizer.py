@@ -2,6 +2,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import pandas as pd
 from typing import Literal, Tuple, Any, Optional
+from pathlib import Path
 
 
 # TODO: Exception Handling.
@@ -240,4 +241,17 @@ class DataVisualizer:
 
         plt.tight_layout()
         plt.show()
+
+    def save_fig(self,
+                 fig_id: int,
+                 tight_layout: bool = True,
+                 fig_extension: str = "png",
+                 location: str = "images",
+                 resolution: int = 300):
+        """Saves the image in a location."""
+        path = Path() / location / f"{fig_id}.{fig_extension}"
+        path.mkdir(parents=True, exist_ok=True)
+        if tight_layout:
+            plt.tight_layout()
+        plt.savefig(path, format=fig_extension, dpi=resolution)
 

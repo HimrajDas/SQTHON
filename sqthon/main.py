@@ -3,8 +3,9 @@ from pandas import DataFrame
 from sqthon.connection import DatabaseConnector
 from sqthon.data_visualizer import DataVisualizer
 import pandas as pd
-from sqlalchemy import text, Engine
-from sqlalchemy.exc import OperationalError, DataError, ProgrammingError, IntegrityError
+from sqlalchemy import text, Engine, inspect
+from sqlalchemy.exc import OperationalError, ProgrammingError, ResourceClosedError
+from typing import Literal
 
 
 # TODO: Exception Handling.
@@ -28,7 +29,66 @@ class Sqthon:
         self.visualizer = DataVisualizer()
         self.connections = {}
 
-    def create_db(self, database: str):
+
+    def server_infile_status(self) -> bool:
+        """
+        Checks for global infile status in the server.
+        Returns:
+            True: if it's on.
+            False: if it's off.
+        """
+        try:
+            with self.connect_db.server_level_engine().connect() as conn:
+                global_infile = conn.execute(text("SHOW GLOBAL VARIABLES LIKE 'local_infile';")).fetchone()[1]
+        except (OperationalError, ProgrammingError) as e:
+            print(f"An error occurred: {e}")
+
+        return global_infile.lower() == "on"
+
+
+    def global_infile_mode(self, mode: Literal["on", "off"]):
+        """Enable or disable global infile."""
+        try:
+            with self.connect_db.server_level_engine().connect() as conn:
+                if mode.lower() == "on":
+                    conn.execute(text("SET GLOBAL local_infile = 1"))
+                elif mode.lower() == "off":
+                    conn.execute(text("SET GLOBAL local_infile = 0"))
+                else:
+                    raise ValueError("Invalid mode. Expected 'on' opr 'off'.")
+        except (OperationalError, ProgrammingError) as e:
+            print(f"An error occurred: {e}")
+
+
+    def session_infile_mode(self, mode: Literal["on", "off"]):
+        """Enable or disable session infile."""
+        try:
+            with self.connect_db.server_level_engine().connect() as conn:
+                if mode.lower() == "on":
+                    conn.execute(text("SET SESSION local_infile = 1"))
+                elif mode.lower() == "off":
+                    conn.execute(text("SET SESSION local_infile = 0"))
+                else:
+                    raise ValueError("Invalid mode. Expected 'on' or 'off'.")
+        except (OperationalError, ProgrammingError) as e:
+            print(f"An error occurred: {e}")
+
+
+    def file_permission(self, access: Literal["grant", "revoke"]):
+        """Give or remove access to a user."""
+        try:
+            with self.connect_db.server_level_engine().connect() as conn:
+                if access.lower() == "grant":
+                    conn.execute(text(f"GRANT FILE ON *.* TO '{self.user}'@'{self.host}'"))
+                elif access.lower() == "revoke":
+                    conn.execute(text(f"REVOKE FILE ON *.* TO '{self.user}'@'{self.host}'"))
+                else:
+                    raise ValueError("Invalid mode. Expected 'grant' or 'revoke'")
+        except OperationalError:
+            print("Failed to connect.")
+            traceback.print_exc()
+
+    def create_database(self, database: str):
         try:
             with self.connect_db.server_level_engine().connect() as connection:
                 try:
@@ -41,7 +101,7 @@ class Sqthon:
                 except ProgrammingError as e:
                     print(f"Programming error: {e}")
         except OperationalError:
-            print("Server is not running.")
+            print("Failed to connect.")
 
     def show_dbs(self):
         try:
@@ -59,29 +119,25 @@ class Sqthon:
         with self.connect_db.server_level_engine().connect() as connection:
             connection.execute(text(f"DROP DATABASE {database};"))
 
-    def connect_to_database(self, database: str, local_infile: bool = False):
-        """Connect to specific database on the server."""
+    def connect_to_database(self, database: str = None, local_infile: bool = False):
+        """Connects to specific database."""
         try:
             connection = self.connect_db.connect(database=database, local_infile=local_infile)
             self.connections[database] = DatabaseContext(parent=self, database=database, connection=connection)
         except Exception as e:
-            print(f"Error connecting to database: {database}: {e}")
+            print(f"Error connecting to database {database}: {e}")
             traceback.print_exc()
 
         return self.connections[database]
 
-
     def show_connections(self):
         return [key for key in self.connect_db.connections]
-
 
     def disconnect_database(self, database):
         self.connect_db.disconnect(database)
 
-
     def crud(self):
         ...
-
 
 
 class DatabaseContext:
@@ -92,6 +148,17 @@ class DatabaseContext:
         self.database = database
         self.connection = connection
 
+    def available_tables(self):
+        """Returns the names of available tables"""
+        try:
+            return inspect(self.connection).get_table_names()
+        except ResourceClosedError as e:
+            print(f"{e}")
+
+
+
+    def ask(self, prompt: str, model: str):
+        ...
 
     def run_query(self,
                   query: str,

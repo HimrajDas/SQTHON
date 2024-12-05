@@ -75,11 +75,11 @@ def map_dtype_to_sqlalchemy(dtype):
         return Text()
 
 
-def create_table_from_csv(path: str,
+def create_table(path: str,
                           table_name: str,
                           engine: Engine,
                           key: bool = False) -> Table:
-    """Read data types from a csv file and creates a table.
+    """Reads a csv file and creates a table.
 
     Parameters:
         - path (str): Path to the csv file.
@@ -118,7 +118,7 @@ def import_csv_to_mysqltable(user: str,
     engine = dbc.server_level_engine(database=database, local_infile=True)
 
     # TODO: Need to handle -> MySQL expects dates in 'YYYY-MM-DD'.
-    table = create_table_from_csv(engine=engine, table_name=table, path=csv_path)
+    table = create_table(engine=engine, table_name=table, path=csv_path)
 
     with open(csv_path, "r", newline='', encoding='utf-8') as csv_file:
         reader = csv.reader(csv_file)
@@ -155,25 +155,6 @@ def import_csv_to_mysqltable(user: str,
         traceback.print_exc()
 
 
-    def to_datetime(df, column):
-        """
-        Convert a column in a DataFrame to datetime type.
-
-        Args:
-        df (pd.DataFrame): The DataFrame containing the column to convert.
-        column (str): The name of the column to convert to datetime.
-
-        Returns:
-        pd.DataFrame: The DataFrame with the specified column converted to datetime.
-        """
-        try:
-            df[column] = pd.to_datetime(df[column])
-            return df
-        except Exception as e:
-            print(f"Error converting column {column} to datetime: {e}")
-            return df
-
-
 def import_csv_to_posgresql(user: str,
                             host: str,
                             csv_path: str,
@@ -181,3 +162,28 @@ def import_csv_to_posgresql(user: str,
                             table: str,
                             service_instance: str = None):
     ...
+
+
+def to_datetime(df, column):
+    """
+    Convert a column in a DataFrame to datetime type.
+
+    Args:
+    df (pd.DataFrame): The DataFrame containing the column to convert.
+    column (str): The name of the column to convert to datetime.
+
+    Returns:
+    pd.DataFrame: The DataFrame with the specified column converted to datetime.
+    """
+    try:
+        df[column] = pd.to_datetime(df[column])
+        return df
+    except Exception as e:
+        print(f"Error converting column {column} to datetime: {e}")
+        return df
+
+
+def get_table_schema(table: str):
+    """Return schema of the specific table."""
+
+
