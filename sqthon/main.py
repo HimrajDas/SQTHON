@@ -4,8 +4,9 @@ from sqthon.connection import DatabaseConnector
 from sqthon.data_visualizer import DataVisualizer
 import pandas as pd
 from sqlalchemy import text, Engine, inspect
-from sqlalchemy.exc import OperationalError, ProgrammingError, ResourceClosedError
+from sqlalchemy.exc import OperationalError, ProgrammingError, ResourceClosedError, IntegrityError, DataError
 from typing import Literal
+from sqthon.util import create_table
 
 
 # TODO: Exception Handling.
@@ -47,7 +48,11 @@ class Sqthon:
 
 
     def global_infile_mode(self, mode: Literal["on", "off"]):
-        """Enable or disable global infile."""
+        """
+        Enable or disable global infile.
+        Parameters:
+            mode (str): 'on' or 'off'.
+        """
         try:
             with self.connect_db.server_level_engine().connect() as conn:
                 if mode.lower() == "on":
@@ -87,6 +92,48 @@ class Sqthon:
         except OperationalError:
             print("Failed to connect.")
             traceback.print_exc()
+
+    def import_csv_to_mysqldb(self,
+                              csv_path: str,
+                              table: str,
+                              lines_terminated_by: str,
+                              database: str):
+        """
+        Imports a CSV file into a MySQL table.
+
+        This method reads a CSV file and loads its contents into a specified MySQL table.
+        If the table does not exist, it will be created automatically based on the CSV file's structure.
+
+        Parameters:
+        -----------
+        csv_path : str
+            The absolute or relative path to the CSV file.
+        table : str
+            The name of the MySQL table where the CSV data will be imported.
+        database : str
+            The name of the MySQL database.
+        lines_terminated_by: str
+            Rows terminated by in the csv file. You should carefully inspect it before trying to import.
+        """
+        engine = self.connect_db.server_level_engine(database=database, local_infile=True)
+        table = create_table(engine=engine, table_name=table, path=csv_path)
+        columns = [col.name for col in table.columns]
+        col_name_clause = ", ".join([f"`{name.strip()}`" for name in columns])
+        query = text(f"""
+        LOAD DATA LOCAL INFILE '{csv_path}'
+        INTO TABLE {table}
+        FIELDS TERMINATED BY ','
+        LINES TERMINATED BY '{lines_terminated_by}'
+        IGNORE 1 ROWS
+        ({col_name_clause})
+        """)
+
+        try:
+            with engine.connect() as conn:
+                conn.execute(query)
+                conn.commit()
+        except (OperationalError, ProgrammingError, ResourceClosedError, IntegrityError, DataError) as e:
+            print(f"An error occurred: {e}")
 
     def create_database(self, database: str):
         try:
@@ -154,6 +201,11 @@ class DatabaseContext:
             return inspect(self.connection).get_table_names()
         except ResourceClosedError as e:
             print(f"{e}")
+
+
+    def exc(self):
+        self.connection.begin()
+
 
 
 

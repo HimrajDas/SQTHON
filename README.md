@@ -121,24 +121,17 @@ dv.plot(data=yearly_sales, plot_type="line", x="sales_year", y="sales", hue="kin
 
 ### _5. Importing CSV to a Table_.
 **I have isolated this feature for several security reasons. What do I mean is that it uses a separate
-engine to import the csv to a table which you don't need to worry about 😎** 
+engine to import the csv to a table which you don't need to worry about 😎**
+> Currently, it supports **_mysql_** only.
 
-> It exists in the **_util.py_** as a separate method devoid of life from others.
-> Currently it supports **_mysql_** only.
-
-#### Method Name: **_import_csv_to_mysqltable_**
-#### Params it has:
-* user: str        
-* host: str  
-* database: str
+#### Method Name: **_import_csv_to_mysqldb_**
+#### Parameters:
 * csv_path: str
-* service_instance: str = None
 * table: str
+* lines_terminated_by: str
+* database: str
 
-**user**: username,
-**host**: host,
-**database**: database name, 
-**csv_path**: relative or absolute path to the csv file.
+**In windows lines_terminated_by is generally '_\r\n_,' though you should inspect it before trying to import it.**
 >**table**: table name, if it doesn't exist then it will create the table according to the csv file.
 >You don't need to worry about data types. It will handle it.
 
@@ -151,15 +144,11 @@ sq.server_infile_status()  # Returns True if it's on.
 sq.global_infile_mode(mode="on")  # mode accepts one of two values only: "on" or "off"
 ```
 
-
+Let's import it.
 ```python
-from sqthon.util import import_csv_to_mysqltable
-# just call the method with correct args. Password fetched automatically.
-import_csv_to_mysqltable(user="dummy",
-                         host="host",
-                         database="dummy",
-                         csv_path="universe/milkyway/our_solar_system/earth",
-                         service_instance="your service instance",
-                         table="table")  # if table don't exist it will create it according 
-                                        # the csv file holds.                       
-```
+sq.import_csv_to_mysqldb(csv_path="path/to/csv",
+                         table="dummy",
+                         lines_terminated_by="\r\n",
+                         database="db")
+# tip: you can use hex editor to analyze the csv file. If it have 0D 0A after end of the row, then
+# it's terminated by '\r\n'
