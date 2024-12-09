@@ -1,12 +1,11 @@
 import os
 from dotenv import load_dotenv
-from sqlalchemy import create_engine, URL, text
+from sqlalchemy import create_engine, URL
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import OperationalError, ArgumentError
-from typing import Optional
 
 
-# TODO: Dialects to be added: SQlite, Oracle, Microsoft SQL Server.
+# TODO: Dialects to be added: SQlite ✅, Oracle, Microsoft SQL Server.
 # TODO: think about setting isolation_level for connections.
 # TODO: support for encrypted connections.
 # TODO: Exception handling
@@ -58,7 +57,7 @@ class DatabaseConnector:
         elif self.dialect.lower() == "sqlite":
             self.driver = None
 
-    def _create_engine(self, database: str, local_infile: bool) -> Engine:
+    def _create_engine(self, database: str, local_infile: bool, pool_size: int, max_overflow: int) -> Engine:
 
         try:
 
@@ -82,7 +81,11 @@ class DatabaseConnector:
                 "local_infile": local_infile,
             }
 
-            return create_engine(url_object, connect_args=connection_args, pool_recycle=3600)
+            return create_engine(url_object,
+                                 connect_args=connection_args,
+                                 pool_size=pool_size,
+                                 max_overflow=max_overflow,
+                                 pool_recycle=3600)
         except ArgumentError as ae:
             print(f"Incorrect arguments: {ae}")
 
@@ -121,19 +124,16 @@ class DatabaseConnector:
             }
 
             return create_engine(url_object, connect_args=args)
-        except ArgumentError as ae:
-            print(f"Incorrect arguments: {ae}")
+        except ArgumentError as e:
+            print(f"Incorrect arguments: {e}")
 
-    def _sqlite_engine(self):
-        ...
 
-    def connect(self, database: str, local_infile: bool):
+    def connect(self, database: str, local_infile: bool, pool_size: int = 20, max_overflow: int = 10):
         if database not in self.connections or self.connections[database].closed:
             try:
                 if database not in self.engines:
-                    self.engines[database] = self._create_engine(database, local_infile)
+                    self.engines[database] = self._create_engine(database, local_infile, pool_size, max_overflow)
                 self.connections[database] = self.engines[database].connect()
-                return self.connections[database]
             except OperationalError:
                 from sqthon.services import start_service
                 print(f"Looks like {self.dialect} server instance is not running.")

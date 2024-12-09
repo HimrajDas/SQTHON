@@ -3,15 +3,17 @@ from pandas import DataFrame
 from sqthon.connection import DatabaseConnector
 from sqthon.data_visualizer import DataVisualizer
 import pandas as pd
-from sqlalchemy import text, Engine, inspect
+from sqlalchemy import text, Engine
 from sqlalchemy.exc import OperationalError, ProgrammingError, ResourceClosedError, IntegrityError, DataError
 from typing import Literal
-from sqthon.util import create_table
+from sqthon.util import create_table, get_tables, get_table_schema
 
 
 # TODO: Exception Handling.
 # TODO: Need to add sqlite connection.
 # TODO: add method for describing and show tables.
+# TODO: Can I implement a method for mysql where it works like postgresql generate_series.
+# TODO: Can I automate creating a date dim table.
 
 
 class Sqthon:
@@ -93,47 +95,7 @@ class Sqthon:
             print("Failed to connect.")
             traceback.print_exc()
 
-    def import_csv_to_mysqldb(self,
-                              csv_path: str,
-                              table: str,
-                              lines_terminated_by: str,
-                              database: str):
-        """
-        Imports a CSV file into a MySQL table.
 
-        This method reads a CSV file and loads its contents into a specified MySQL table.
-        If the table does not exist, it will be created automatically based on the CSV file's structure.
-
-        Parameters:
-        -----------
-        csv_path : str
-            The absolute or relative path to the CSV file.
-        table : str
-            The name of the MySQL table where the CSV data will be imported.
-        database : str
-            The name of the MySQL database.
-        lines_terminated_by: str
-            Rows terminated by in the csv file. You should carefully inspect it before trying to import.
-        """
-        engine = self.connect_db.server_level_engine(database=database, local_infile=True)
-        table = create_table(engine=engine, table_name=table, path=csv_path)
-        columns = [col.name for col in table.columns]
-        col_name_clause = ", ".join([f"`{name.strip()}`" for name in columns])
-        query = text(f"""
-        LOAD DATA LOCAL INFILE '{csv_path}'
-        INTO TABLE {table}
-        FIELDS TERMINATED BY ','
-        LINES TERMINATED BY '{lines_terminated_by}'
-        IGNORE 1 ROWS
-        ({col_name_clause})
-        """)
-
-        try:
-            with engine.connect() as conn:
-                conn.execute(query)
-                conn.commit()
-        except (OperationalError, ProgrammingError, ResourceClosedError, IntegrityError, DataError) as e:
-            print(f"An error occurred: {e}")
 
     def create_database(self, database: str):
         try:
@@ -142,8 +104,7 @@ class Sqthon:
                     if self.dialect.lower() == "mysql":
                         connection.execute(text(f"CREATE DATABASE IF NOT EXISTS {database};"))
                     elif self.dialect.lower() == "postgresql":
-                        if not connection.execute(
-                                text(f"SELECT 1 FROM pg_database WHERE datname = '{database}'")).scalar():
+                        if not connection.execute(text(f"SELECT 1 FROM pg_database WHERE datname = '{database}'")).scalar():
                             connection.execute(text(f"CREATE DATABASE {database}"))
                 except ProgrammingError as e:
                     print(f"Programming error: {e}")
@@ -195,22 +156,67 @@ class DatabaseContext:
         self.database = database
         self.connection = connection
 
+
     def available_tables(self):
         """Returns the names of available tables"""
-        try:
-            return inspect(self.connection).get_table_names()
-        except ResourceClosedError as e:
-            print(f"{e}")
+        # TODO: Fucker is not working.
+        get_tables(self.connection)
 
 
-    def exc(self):
-        self.connection.begin()
+    def table_schema(self, table: str):
+        get_table_schema(table=table, connection=self.connection)
 
+
+    def date_dimension_table(self):
+        """Creates a date dimension table."""
+        ...
+
+    def insert(self):
+        ...
 
 
 
     def ask(self, prompt: str, model: str):
         ...
+
+    def import_csv_to_mysqldb(self,
+                              csv_path: str,
+                              table: str,
+                              lines_terminated_by: str = "\r\n"):
+        """
+        Imports a CSV file into a MySQL table.
+
+        This method reads a CSV file and loads its contents into a specified MySQL table.
+        If the table does not exist, it will be created automatically based on the CSV file's structure.
+
+        Parameters:
+        -----------
+        csv_path : str
+            The absolute or relative path to the CSV file.
+        table : str
+            The name of the MySQL table where the CSV data will be imported.
+        database : str
+            The name of the MySQL database.
+        """
+
+        table = create_table(engine=self.connection, table_name=table, path=csv_path)
+        columns = [col.name for col in table.columns]
+        col_name_clause = ", ".join([f"`{name.strip()}`" for name in columns])
+        query = text(f"""
+        LOAD DATA LOCAL INFILE '{csv_path}'
+        INTO TABLE {table}
+        FIELDS TERMINATED BY ','
+        LINES TERMINATED BY '{lines_terminated_by}'
+        IGNORE 1 ROWS
+        ({col_name_clause})
+        """)
+
+        try:
+            self.connection.execute(query)
+            self.connection.commit()
+
+        except (OperationalError, ProgrammingError, ResourceClosedError, IntegrityError, DataError) as e:
+            print(f"An error occurred: {e}")
 
     def run_query(self,
                   query: str,

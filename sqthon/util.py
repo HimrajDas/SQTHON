@@ -1,13 +1,9 @@
 import pandas as pd
 from sqlalchemy import (
     MetaData, Column, Table, Integer, Float, Numeric, String, Text, Boolean,
-    DateTime, Date, Time, JSON, ARRAY, LargeBinary, Interval, Engine, text
+    DateTime, Date, Time, JSON, ARRAY, LargeBinary, Interval, Engine, text, inspect
 )
-
-from sqthon.connection import DatabaseConnector
-from sqlalchemy.exc import OperationalError, SQLAlchemyError, DataError, ProgrammingError, IntegrityError
-import traceback
-import csv
+from sqlalchemy.exc import ResourceClosedError
 
 
 def map_dtype_to_sqlalchemy(dtype):
@@ -126,5 +122,19 @@ def to_datetime(df, column):
         return df
 
 
-def get_table_schema(table: str):
+def get_table_schema(table: str, connection: Engine):
     """Return schema of the specific table."""
+    try:
+        inspector = inspect(connection)
+        return [{"column_name": col["name"], "column_data_type": col["type"]} for col in inspector.get_columns(table)]
+    except ResourceClosedError as e:
+        print(f"An error occurred: {e}")
+
+
+def get_tables(connection: Engine):
+    try:
+        return inspect(connection).get_table_names()
+    except ResourceClosedError as e:
+        print(f"An error occurred: {e}")
+
+

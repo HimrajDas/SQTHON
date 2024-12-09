@@ -129,9 +129,8 @@ engine to import the csv to a table which you don't need to worry about 😎**
 * csv_path: str
 * table: str
 * lines_terminated_by: str
-* database: str
 
-**In windows lines_terminated_by is generally '_\r\n_,' though you should inspect it before trying to import it.**
+**In windows lines_terminated_by is generally '_\r\n_,' though you should inspect it before trying to import.**
 >**table**: table name, if it doesn't exist then it will create the table according to the csv file.
 >You don't need to worry about data types. It will handle it.
 
@@ -146,9 +145,7 @@ sq.global_infile_mode(mode="on")  # mode accepts one of two values only: "on" or
 
 Let's import it.
 ```python
-sq.import_csv_to_mysqldb(csv_path="path/to/csv",
-                         table="dummy",
-                         lines_terminated_by="\r\n",
-                         database="db")
+conn1 = sq.connect_to_database(database="example_db", local_infile=True)
+conn1.import_csv_to_mysqldb(csv_path="/path/to/csv", table="dummy", lines_terminated_by="\n")
 # tip: you can use hex editor to analyze the csv file. If it have 0D 0A after end of the row, then
 # it's terminated by '\r\n'
