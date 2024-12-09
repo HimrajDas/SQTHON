@@ -9,11 +9,9 @@ from typing import Literal
 from sqthon.util import create_table, get_tables, get_table_schema
 
 
-# TODO: Exception Handling.
 # TODO: Need to add sqlite connection.
-# TODO: add method for describing and show tables.
 # TODO: Can I implement a method for mysql where it works like postgresql generate_series.
-# TODO: Can I automate creating a date dim table.
+# TODO: Can I automate creating a date dim table?
 
 
 class Sqthon:
@@ -96,7 +94,6 @@ class Sqthon:
             traceback.print_exc()
 
 
-
     def create_database(self, database: str):
         try:
             with self.connect_db.server_level_engine().connect() as connection:
@@ -144,8 +141,6 @@ class Sqthon:
     def disconnect_database(self, database):
         self.connect_db.disconnect(database)
 
-    def crud(self):
-        ...
 
 
 class DatabaseContext:
@@ -175,7 +170,6 @@ class DatabaseContext:
         ...
 
 
-
     def ask(self, prompt: str, model: str):
         ...
 
@@ -195,8 +189,8 @@ class DatabaseContext:
             The absolute or relative path to the CSV file.
         table : str
             The name of the MySQL table where the CSV data will be imported.
-        database : str
-            The name of the MySQL database.
+        lines_terminated_by : str
+            How the lines are terminated by in the csv file. Typically, '\r\n' or '\n'.
         """
 
         table = create_table(engine=self.connection, table_name=table, path=csv_path)
