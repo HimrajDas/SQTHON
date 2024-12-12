@@ -1,7 +1,7 @@
 import pandas as pd
 from sqlalchemy import (
     MetaData, Column, Table, Integer, Float, Numeric, String, Text, Boolean,
-    DateTime, Date, Time, JSON, ARRAY, LargeBinary, Interval, Engine, text, inspect
+    DateTime, Date, Time, JSON, ARRAY, LargeBinary, Interval, Engine, inspect
 )
 from sqlalchemy.exc import ResourceClosedError
 
@@ -122,6 +122,10 @@ def to_datetime(df, column):
         return df
 
 
+def indexes(table: str, connection: Engine):
+    return inspect(connection).get_indexes(table_name=table)
+
+
 def get_table_schema(table: str, connection: Engine):
     """Return schema of the specific table."""
     try:
@@ -137,4 +141,58 @@ def get_tables(connection: Engine):
     except ResourceClosedError as e:
         print(f"An error occurred: {e}")
 
+
+def date_dimension(connection: Engine,
+                   year_start: str,
+                   year_end: str,
+                   freq: str = 'D') -> pd.DataFrame:
+    """
+    Creates a date dimension table using Pandas to generate date series.
+
+    Parameters:
+    -----------
+    connection : Engine
+        SQLAlchemy database connection engine
+    table_name : str
+        Name of the table to create
+    year_start : str
+        Start date of the date series (e.g., '2000-01-01')
+    year_end : str
+        End date of the date series (e.g., '2010-12-31')
+    freq : str, optional
+        Pandas frequency alias (default is 'D' for daily)
+        Common values:
+        - 'D': Daily
+        - 'B': Business daily
+        - 'W': Weekly
+        - 'M': Monthly
+        - 'Q': Quarterly
+        - 'Y': Yearly
+    """
+    date_series = pd.date_range(start=year_start, end=year_end, freq=freq)
+
+    return pd.DataFrame({
+        'date': date_series,
+        'date_key': date_series.strftime('%Y%m%d').astype(int),
+        'day_of_month': date_series.day,
+        'day_of_year': date_series.dayofyear,
+        'day_of_week': date_series.dayofweek + 1,  # Pandas uses 0-6, actual is  1-7
+        'day_name': date_series.strftime('%A'),
+        'day_short_name': date_series.strftime('%a'),
+        'week_number': date_series.isocalendar().week,
+        'week_of_month': ((date_series.day - 1) // 7) + 1,
+        'week': date_series - pd.to_timedelta(date_series.dayofweek, unit='D'),
+        'month_number': date_series.month,
+        'month_name': date_series.strftime('%B'),
+        'month_short_name': date_series.strftime('%b'),
+        'first_day_of_month': date_series.to_period('M').strftime('%Y-%m-%d'),
+        'last_day_of_month': date_series.to_period('M').strftime('%Y-%m-%d'),
+        'quarter_number': date_series.quarter,
+        'quarter_name': 'Q' + date_series.quarter.astype(str),
+        'first_day_of_quarter': date_series.to_period('Q').strftime('%Y-%m-%d'),
+        'last_day_of_quarter': date_series.to_period('Q').strftime('%Y-%m-%d'),
+        'year': date_series.year,
+        'decade': (date_series.year // 10) * 10,
+        'century': (date_series.year // 100) * 100
+    })
 

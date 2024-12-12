@@ -1,19 +1,12 @@
 import traceback
-from pandas import DataFrame
 from sqthon.connection import DatabaseConnector
-from sqthon.data_visualizer import DataVisualizer
-import pandas as pd
-from sqlalchemy import text, Engine
-from sqlalchemy.exc import OperationalError, ProgrammingError, ResourceClosedError, IntegrityError, DataError
+from typing import final
+from sqlalchemy import text
+from sqlalchemy.exc import OperationalError, ProgrammingError
 from typing import Literal
-from sqthon.util import create_table, get_tables, get_table_schema
 
 
-# TODO: Need to add sqlite connection.
-# TODO: Can I implement a method for mysql where it works like postgresql generate_series.
-# TODO: Can I automate creating a date dim table?
-
-
+@final
 class Sqthon:
     def __init__(self,
                  dialect: str,
@@ -27,9 +20,7 @@ class Sqthon:
                                             user=self.user,
                                             host=self.host,
                                             service_instance_name=service_instance_name)
-        self.visualizer = DataVisualizer()
         self.connections = {}
-
 
     def server_infile_status(self) -> bool:
         """
@@ -45,7 +36,6 @@ class Sqthon:
             print(f"An error occurred: {e}")
 
         return global_infile.lower() == "on"
-
 
     def global_infile_mode(self, mode: Literal["on", "off"]):
         """
@@ -64,7 +54,6 @@ class Sqthon:
         except (OperationalError, ProgrammingError) as e:
             print(f"An error occurred: {e}")
 
-
     def session_infile_mode(self, mode: Literal["on", "off"]):
         """Enable or disable session infile."""
         try:
@@ -77,7 +66,6 @@ class Sqthon:
                     raise ValueError("Invalid mode. Expected 'on' or 'off'.")
         except (OperationalError, ProgrammingError) as e:
             print(f"An error occurred: {e}")
-
 
     def file_permission(self, access: Literal["grant", "revoke"]):
         """Give or remove access to a user."""
@@ -93,7 +81,6 @@ class Sqthon:
             print("Failed to connect.")
             traceback.print_exc()
 
-
     def create_database(self, database: str):
         try:
             with self.connect_db.server_level_engine().connect() as connection:
@@ -101,7 +88,8 @@ class Sqthon:
                     if self.dialect.lower() == "mysql":
                         connection.execute(text(f"CREATE DATABASE IF NOT EXISTS {database};"))
                     elif self.dialect.lower() == "postgresql":
-                        if not connection.execute(text(f"SELECT 1 FROM pg_database WHERE datname = '{database}'")).scalar():
+                        if not connection.execute(
+                                text(f"SELECT 1 FROM pg_database WHERE datname = '{database}'")).scalar():
                             connection.execute(text(f"CREATE DATABASE {database}"))
                 except ProgrammingError as e:
                     print(f"Programming error: {e}")
@@ -140,119 +128,3 @@ class Sqthon:
 
     def disconnect_database(self, database):
         self.connect_db.disconnect(database)
-
-
-
-class DatabaseContext:
-    """Context-specific sub-instance for a specific database."""
-
-    def __init__(self, parent: Sqthon, database: str, connection: Engine):
-        self.parent = parent
-        self.database = database
-        self.connection = connection
-
-
-    def available_tables(self):
-        """Returns the names of available tables"""
-        # TODO: Fucker is not working.
-        get_tables(self.connection)
-
-
-    def table_schema(self, table: str):
-        get_table_schema(table=table, connection=self.connection)
-
-
-    def date_dimension_table(self):
-        """Creates a date dimension table."""
-        ...
-
-    def insert(self):
-        ...
-
-
-    def ask(self, prompt: str, model: str):
-        ...
-
-    def import_csv_to_mysqldb(self,
-                              csv_path: str,
-                              table: str,
-                              lines_terminated_by: str = "\r\n"):
-        """
-        Imports a CSV file into a MySQL table.
-
-        This method reads a CSV file and loads its contents into a specified MySQL table.
-        If the table does not exist, it will be created automatically based on the CSV file's structure.
-
-        Parameters:
-        -----------
-        csv_path : str
-            The absolute or relative path to the CSV file.
-        table : str
-            The name of the MySQL table where the CSV data will be imported.
-        lines_terminated_by : str
-            How the lines are terminated by in the csv file. Typically, '\r\n' or '\n'.
-        """
-
-        table = create_table(engine=self.connection, table_name=table, path=csv_path)
-        columns = [col.name for col in table.columns]
-        col_name_clause = ", ".join([f"`{name.strip()}`" for name in columns])
-        query = text(f"""
-        LOAD DATA LOCAL INFILE '{csv_path}'
-        INTO TABLE {table}
-        FIELDS TERMINATED BY ','
-        LINES TERMINATED BY '{lines_terminated_by}'
-        IGNORE 1 ROWS
-        ({col_name_clause})
-        """)
-
-        try:
-            self.connection.execute(query)
-            self.connection.commit()
-
-        except (OperationalError, ProgrammingError, ResourceClosedError, IntegrityError, DataError) as e:
-            print(f"An error occurred: {e}")
-
-    def run_query(self,
-                  query: str,
-                  visualize: bool = False,
-                  plot_type: str = None,
-                  x=None,
-                  y=None,
-                  title=None,
-                  **kwargs) -> DataFrame | None:
-
-        """
-        Executes a SQL query and optionally visualizes the result.
-
-        Parameters:
-            - query (str): The SQL query to be executed.
-            - visualize (bool, optional): If True, the result will be visualized. Default is False.
-            - plot_type (str, optional): The type of plot to create if visualize is True.
-                Must be one of 'scatter', 'line', or 'bar'. Default is None.
-            - x (str, optional): The column name to be used for the x-axis in the plot. Required if visualize is True.
-            - y (str, optional): The column name to be used for the y-axis in the plot. Required if visualize is True.
-            - title (str, optional): The title for the plot. Required if visualize is True.
-            - **kwargs: Additional keyword arguments passed to the plotting function.
-
-        Returns:
-            - result (Object): The result of the SQL query execution.
-
-        Raises:
-            - ValueError: If visualize is True but plot_type, x, y, or title are not provided.
-        """
-
-        try:
-            result = pd.read_sql_query(text(query), self.connection)
-            if visualize:
-                if not all([plot_type, x, y]):
-                    raise ValueError("For visualization, please provide plot_type, x, y.")
-                self.visualizer.plot(result, plot_type, x, y, title, **kwargs)
-
-            return result
-
-        except ProgrammingError as e:
-            print(f"Programming error: {e}")
-        except Exception as e:
-            # TODO: Make exception handling better. SQL syntax errors.
-            print(f"Error executing query: {e}")
-            return None

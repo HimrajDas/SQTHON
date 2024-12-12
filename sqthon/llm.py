@@ -2,7 +2,7 @@ import ollama
 from sqthon.services import is_ollama_running, start_ollama_service
 from sqthon.main import Sqthon
 from typing import Dict, List, Optional
-from functools import lru_cache
+from functools import cache
 from sqlalchemy import inspect
 import json
 

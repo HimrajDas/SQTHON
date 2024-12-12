@@ -3,10 +3,11 @@ from dotenv import load_dotenv
 from sqlalchemy import create_engine, URL
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import OperationalError, ArgumentError
+from typing import final
 
 
 # TODO: Dialects to be added: SQlite ✅, Oracle, Microsoft SQL Server.
-# TODO: think about setting isolation_level for connections.
+# TODO: Isolation_level for connections.
 # TODO: support for encrypted connections.
 # TODO: Exception handling
 
@@ -57,6 +58,7 @@ class DatabaseConnector:
         elif self.dialect.lower() == "sqlite":
             self.driver = None
 
+    @final
     def _create_engine(self, database: str, local_infile: bool, pool_size: int, max_overflow: int) -> Engine:
 
         try:
@@ -89,6 +91,7 @@ class DatabaseConnector:
         except ArgumentError as ae:
             print(f"Incorrect arguments: {ae}")
 
+    @final
     def server_level_engine(self, database: str = None, local_infile: bool = False) -> Engine:
         """Use this engine for server level one-time operation.
         It's good to use this method using context manager.
@@ -128,6 +131,7 @@ class DatabaseConnector:
             print(f"Incorrect arguments: {e}")
 
 
+    @final
     def connect(self, database: str, local_infile: bool, pool_size: int = 20, max_overflow: int = 10):
         if database not in self.connections or self.connections[database].closed:
             try:
@@ -160,6 +164,7 @@ class DatabaseConnector:
                 del self.connections[database]
 
 
+    @final
     def dispose_engine(self, database: str):
         """Permanently disposes an engine."""
         if database in self.engines and self.engines[database] is not None:
