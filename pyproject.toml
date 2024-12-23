@@ -1,8 +1,8 @@
 [tool.poetry]
 name = "sqthon"
-version = "1.0.0"
+version = "0.1.0"
 description = ""
-authors = ["HIMRAJ <iamhimraj002077@gmail.com>"]
+authors = ["HIMRAJ <himraj.fordev@gmail.com>"]
 readme = "README.md"
 license = "MIT"
 
@@ -20,6 +20,7 @@ ollama = "^0.3.3"
 requests = "^2.32.3"
 pywin32 = "^306"
 pymysql = "^1.1.1"
+openai = "^1.57.3"
 
 
 [build-system]

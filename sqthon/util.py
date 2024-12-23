@@ -4,6 +4,7 @@ from sqlalchemy import (
     DateTime, Date, Time, JSON, ARRAY, LargeBinary, Interval, Engine, inspect
 )
 from sqlalchemy.exc import ResourceClosedError
+from typing import List
 
 
 def map_dtype_to_sqlalchemy(dtype):
@@ -122,12 +123,30 @@ def to_datetime(df, column):
         return df
 
 
-def indexes(table: str, connection: Engine):
+def table_keys(table_name: str, connection: Engine) -> dict:
+    """Return primary and foreign keys of the table."""
+    inspector = inspect(connection)
+    if table_name not in inspector.get_table_names():
+        raise ValueError(f"{table_name} doesn't exist.")
+
+    primary_keys = inspector.get_pk_constraint(table_name).get("constrained_columns", [])
+    foreign_keys = [
+        {
+            "column": fk["constrained_columns"][0],
+            "referred_table": fk["referred_table"],
+            "referred_column": fk["referred_columns"][0]
+        } for fk in inspector.get_foreign_keys(table_name)
+    ]
+
+    return {"primary_keys": primary_keys, "foreign_keys": foreign_keys}
+
+
+def indexes(table: str, connection: Engine) -> list:
     return inspect(connection).get_indexes(table_name=table)
 
 
-def get_table_schema(table: str, connection: Engine):
-    """Return schema of the specific table."""
+def get_table_schema(table: str, connection: Engine) -> List:
+    """Returns schema of the specific table."""
     try:
         inspector = inspect(connection)
         return [{"column_name": col["name"], "column_data_type": col["type"]} for col in inspector.get_columns(table)]
@@ -135,11 +154,27 @@ def get_table_schema(table: str, connection: Engine):
         print(f"An error occurred: {e}")
 
 
-def get_tables(connection: Engine):
+def tables(connection: Engine) -> List:
+    """Returns a list with available table names."""
     try:
         return inspect(connection).get_table_names()
     except ResourceClosedError as e:
         print(f"An error occurred: {e}")
+
+
+def database_schema(connection: Engine) -> List:
+    """Returns schema of the database."""
+    return [
+        {
+            "table_name": table,
+            "keys": table_keys(table, connection),
+            "column_names_with_dtypes" :[
+                {"name": column["column_name"], "data_type": column["column_data_type"]}
+                for column in get_table_schema(table, connection)
+            ]
+        }
+        for table in tables(connection)
+    ]
 
 
 def date_dimension(connection: Engine,
@@ -195,4 +230,3 @@ def date_dimension(connection: Engine,
         'decade': (date_series.year // 10) * 10,
         'century': (date_series.year // 100) * 100
     })
-

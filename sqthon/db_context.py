@@ -2,7 +2,7 @@ from sqlalchemy import text, Engine
 from sqlalchemy.exc import OperationalError, DataError, ProgrammingError, IntegrityError, ResourceClosedError
 from typing import Literal, Callable
 from sqthon.util import create_table
-from sqthon.util import get_table_schema, get_tables, date_dimension, indexes
+from sqthon.util import get_table_schema, tables, date_dimension, indexes, database_schema
 import os
 import pandas as pd
 
@@ -17,18 +17,29 @@ class DatabaseContext:
         self.connection = connection
         self.visualizer = DataVisualizer()
 
-    def available_tables(self):
+    def get_tables(self) -> list:
         """Returns the names of available tables"""
-        get_tables(self.connection)
+        return tables(self.connection)
 
-    def check_indexes(self, table: str):
-        indexes(table=table, connection=self.connection)
+    def check_indexes(self, table: str) -> list:
+        """Check indexes for the table."""
+        return indexes(table=table, connection=self.connection)
 
-    def table_schema(self, table: str):
-        get_table_schema(table=table, connection=self.connection)
+    def table_schema(self, table: str) -> list:
+        return get_table_schema(table=table, connection=self.connection)
 
-    def drop_table(self, table: str):
+
+    def get_database_schema(self) -> list:
+        """Returns the schema of the database."""
+        return database_schema(self.connection)
+
+    def drop_table(self, table: str) -> None:
+        """Drops a table from the database."""
         self.connection.execute(text(f"DROP TABLE {table}"))
+
+
+    def ask(self, prompt: str):
+        ...
 
     def generate_date_series(self,
                              table: str,

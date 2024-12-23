@@ -1,7 +1,7 @@
 # _SQTHON_
 
 
-### _Connect to multiple databases, run raw SQL queries, perform analysis and make visualization._
+### _Connect to multiple databases, run and generate raw SQL queries, perform analysis and make visualization._
 
 ## _Currently working on:_
 - ### **_SqthonAI_**: _generate SQL queries using a LLM of your choice_ 🤖
@@ -15,6 +15,8 @@
 ### And for your safety create a virtual environment.😐
 
 ## _Contributors are always more than welcome. ❤️_
+
+### If you don't have mysql installed, you can download it from [here](https://dev.mysql.com/downloads/installer/). ⭐
 
 ## _Installation 📦_
 
