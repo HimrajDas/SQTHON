@@ -168,7 +168,7 @@ def database_schema(connection: Engine) -> List:
         {
             "table_name": table,
             "keys": table_keys(table, connection),
-            "column_names_with_dtypes" :[
+            "column_names_with_dtypes": [
                 {"name": column["column_name"], "data_type": column["column_data_type"]}
                 for column in get_table_schema(table, connection)
             ]

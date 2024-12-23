@@ -1,5 +1,5 @@
 from openai import OpenAI
-from sqthon.util import get_table_schema, available_tables
+from sqthon.util import database_schema
 
 
 
