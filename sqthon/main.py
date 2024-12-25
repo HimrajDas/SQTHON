@@ -4,6 +4,7 @@ from typing import final
 from sqlalchemy import text
 from sqlalchemy.exc import OperationalError, ProgrammingError
 from typing import Literal
+from sqthon.db_context import DatabaseContext
 
 
 @final
@@ -116,7 +117,7 @@ class Sqthon:
         """Connects to specific database."""
         try:
             connection = self.connect_db.connect(database=database, local_infile=local_infile)
-            self.connections[database] = DatabaseContext(parent=self, database=database, connection=connection)
+            self.connections[database] = DatabaseContext(database=database, connection=connection)
         except Exception as e:
             print(f"Error connecting to database {database}: {e}")
             traceback.print_exc()

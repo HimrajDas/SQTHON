@@ -5,7 +5,6 @@ from sqthon.util import create_table
 from sqthon.util import get_table_schema, tables, date_dimension, indexes, database_schema
 import os
 import pandas as pd
-
 from sqthon.data_visualizer import DataVisualizer
 
 
