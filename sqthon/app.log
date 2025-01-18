@@ -1,0 +1,37 @@
+2025-01-15 00:47:04,265 - INFO - Messages prepared for chat completion.
+2025-01-15 00:47:05,548 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-01-15 00:47:05,563 - INFO - Chat completion request successful.
+2025-01-15 00:47:05,564 - INFO - Chat response successfully appended to messages.
+2025-01-15 00:50:04,857 - INFO - Messages prepared for chat completion.
+2025-01-15 00:50:06,434 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-01-15 00:50:06,463 - INFO - Chat completion request successful.
+2025-01-15 00:50:06,463 - INFO - Chat response successfully appended to messages.
+2025-01-15 00:51:12,394 - INFO - Messages prepared for chat completion.
+2025-01-15 00:51:13,864 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-01-15 00:51:13,868 - INFO - Chat completion request successful.
+2025-01-15 00:51:13,869 - INFO - Chat response successfully appended to messages.
+2025-01-15 00:51:13,869 - INFO - ChatCompletionMessage(content=None, refusal=None, role='assistant', audio=None, function_call=None, tool_calls=[ChatCompletionMessageToolCall(id='call_7J5QaDz4J7xZNk8eh5ZEJbMH', function=Function(arguments='{"location":"Glasgow, Scotland","format":"celsius"}', name='get_current_weather'), type='function')])
+2025-01-15 16:04:01,671 - INFO - Messages prepared for chat completion.
+2025-01-15 16:04:02,915 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-01-15 16:04:02,930 - INFO - Chat completion request successful.
+2025-01-15 16:04:02,932 - INFO - Chat response successfully appended to messages.
+2025-01-15 16:04:02,932 - INFO - ChatCompletionMessage(content='How many days would you like to know the weather forecast for in Glasgow, Scotland?', refusal=None, role='assistant', audio=None, function_call=None, tool_calls=None)
+2025-01-15 16:09:01,792 - INFO - Messages prepared for chat completion.
+2025-01-15 16:09:03,064 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-01-15 16:09:03,070 - INFO - Chat completion request successful.
+2025-01-15 16:09:03,070 - INFO - Chat response successfully appended to messages.
+2025-01-15 16:09:03,070 - INFO - ChatCompletionMessage(content=None, refusal=None, role='assistant', audio=None, function_call=None, tool_calls=[ChatCompletionMessageToolCall(id='call_HNg2I14eJoFjOB5G4DFPj5z0', function=Function(arguments='{"location":"Glasgow, Scotland","format":"celsius","num_days":5}', name='get_n_day_weather_forecast'), type='function')])
+2025-01-15 19:09:03,236 - INFO - Messages prepared for chat completion.
+2025-01-15 19:09:04,253 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-01-15 19:09:04,259 - INFO - Chat completion request successful.
+2025-01-15 19:09:04,259 - INFO - Chat response successfully appended to messages.
+2025-01-15 19:09:04,259 - INFO - ChatCompletionMessage(content=None, refusal=None, role='assistant', audio=None, function_call=None, tool_calls=[ChatCompletionMessageToolCall(id='call_w8lroqeYqKc5mHVgXCU5AlUy', function=Function(arguments='{"location":"Toronto, Canada","format":"celsius","num_days":5}', name='get_n_day_weather_forecast'), type='function')])
+2025-01-15 19:09:24,361 - INFO - Messages prepared for chat completion.
+2025-01-15 19:09:25,352 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-01-15 19:09:25,358 - INFO - Chat completion request successful.
+2025-01-15 19:09:25,359 - INFO - Chat response successfully appended to messages.
+2025-01-15 19:09:25,359 - INFO - ChatCompletionMessage(content=None, refusal=None, role='assistant', audio=None, function_call=None, tool_calls=[ChatCompletionMessageToolCall(id='call_88CazGZHZ9t5P8RopaBpau5y', function=Function(arguments='{"location":"Toronto, Canada","format":"celsius","num_days":5}', name='get_n_day_weather_forecast'), type='function')])
+2025-01-15 19:22:25,168 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-01-15 19:22:25,172 - INFO - Chat completion request successful.
+2025-01-15 19:22:25,172 - INFO - Chat response successfully appended to messages.
+2025-01-15 19:22:25,172 - INFO - [ChatCompletionMessageToolCall(id='call_guKXkqoq7qk12MfpqXobG7yG', function=Function(arguments='{"location": "San Francisco", "format": "celsius", "num_days": 4}', name='get_n_day_weather_forecast'), type='function'), ChatCompletionMessageToolCall(id='call_n0w5fkxIuVhkUIoA8uZVONXA', function=Function(arguments='{"location": "Glasgow", "format": "celsius", "num_days": 4}', name='get_n_day_weather_forecast'), type='function')]

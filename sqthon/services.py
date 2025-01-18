@@ -8,10 +8,10 @@ from win32com.shell.shell import ShellExecuteEx
 import win32com.shell.shellcon as shellcon
 
 
-
 def is_admin():
     if os.name == "nt":
         import ctypes
+
         try:
             return ctypes.windll.shell32.IsUserAnAdmin()
         except:
@@ -26,7 +26,7 @@ def _runAsAdmin(service: str, action: str):
         lpVerb="runas",
         lpFile=cmd,
         lpParameters=params,
-        fMask=shellcon.SEE_MASK_NOCLOSEPROCESS
+        fMask=shellcon.SEE_MASK_NOCLOSEPROCESS,
     )
 
     if execute_cmd:
@@ -54,7 +54,6 @@ def _runAsAdmin(service: str, action: str):
             print(f"Failed to stop the {service} server instance.")
 
 
-
 def is_ollama_running(url: str = "http://localhost:11434") -> bool:
     """
     Check if the ollama service is running.
@@ -71,18 +70,17 @@ def is_ollama_running(url: str = "http://localhost:11434") -> bool:
         return response.status_code == 200
     except RequestException:
         return False
-    
+
 
 def is_service_running(service_instance_name: str) -> bool:
     check_service_status = subprocess.run(
         ["sc", "query", service_instance_name],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-        text=True
+        text=True,
     )
 
     return "RUNNING" in check_service_status.stdout
-    
 
 
 def start_ollama_service():
@@ -93,11 +91,10 @@ def start_ollama_service():
         print(f"Failed to start the ollama service: {e}")
 
 
-
 def start_service(service_name: str):
     """Starts a service instance with elevated privileges if needed.
-        Parameters:
-              service_name (str): Name of the server to start.
+    Parameters:
+          service_name (str): Name of the server to start.
     """
     if is_service_running(service_name):
         print(f"{service_name} server instance is already running.")

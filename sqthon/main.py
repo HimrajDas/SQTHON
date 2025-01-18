@@ -4,22 +4,23 @@ from typing import final
 from sqlalchemy import text
 from sqlalchemy.exc import OperationalError, ProgrammingError
 from typing import Literal
+from sqthon.db_context import DatabaseContext
 
 
 @final
 class Sqthon:
-    def __init__(self,
-                 dialect: str,
-                 user: str,
-                 host: str,
-                 service_instance_name: str = None):
+    def __init__(
+            self, dialect: str, user: str, host: str, service_instance_name: str = None
+    ):
         self.dialect = dialect
         self.user = user
         self.host = host
-        self.connect_db = DatabaseConnector(dialect=self.dialect,
-                                            user=self.user,
-                                            host=self.host,
-                                            service_instance_name=service_instance_name)
+        self.connect_db = DatabaseConnector(
+            dialect=self.dialect,
+            user=self.user,
+            host=self.host,
+            service_instance_name=service_instance_name,
+        )
         self.connections = {}
 
     def server_infile_status(self) -> bool:
@@ -31,7 +32,9 @@ class Sqthon:
         """
         try:
             with self.connect_db.server_level_engine().connect() as conn:
-                global_infile = conn.execute(text("SHOW GLOBAL VARIABLES LIKE 'local_infile';")).fetchone()[1]
+                global_infile = conn.execute(
+                    text("SHOW GLOBAL VARIABLES LIKE 'local_infile';")
+                ).fetchone()[1]
         except (OperationalError, ProgrammingError) as e:
             print(f"An error occurred: {e}")
 
@@ -72,9 +75,13 @@ class Sqthon:
         try:
             with self.connect_db.server_level_engine().connect() as conn:
                 if access.lower() == "grant":
-                    conn.execute(text(f"GRANT FILE ON *.* TO '{self.user}'@'{self.host}'"))
+                    conn.execute(
+                        text(f"GRANT FILE ON *.* TO '{self.user}'@'{self.host}'")
+                    )
                 elif access.lower() == "revoke":
-                    conn.execute(text(f"REVOKE FILE ON *.* TO '{self.user}'@'{self.host}'"))
+                    conn.execute(
+                        text(f"REVOKE FILE ON *.* TO '{self.user}'@'{self.host}'")
+                    )
                 else:
                     raise ValueError("Invalid mode. Expected 'grant' or 'revoke'")
         except OperationalError:
@@ -86,10 +93,15 @@ class Sqthon:
             with self.connect_db.server_level_engine().connect() as connection:
                 try:
                     if self.dialect.lower() == "mysql":
-                        connection.execute(text(f"CREATE DATABASE IF NOT EXISTS {database};"))
+                        connection.execute(
+                            text(f"CREATE DATABASE IF NOT EXISTS {database};")
+                        )
                     elif self.dialect.lower() == "postgresql":
                         if not connection.execute(
-                                text(f"SELECT 1 FROM pg_database WHERE datname = '{database}'")).scalar():
+                                text(
+                                    f"SELECT 1 FROM pg_database WHERE datname = '{database}'"
+                                )
+                        ).scalar():
                             connection.execute(text(f"CREATE DATABASE {database}"))
                 except ProgrammingError as e:
                     print(f"Programming error: {e}")
@@ -112,11 +124,16 @@ class Sqthon:
         with self.connect_db.server_level_engine().connect() as connection:
             connection.execute(text(f"DROP DATABASE {database};"))
 
-    def connect_to_database(self, database: str = None, local_infile: bool = False):
+    def connect_to_database(self, database: str = None, local_infile: bool = False, use_llm: bool = False,
+                            model: str = None):
         """Connects to specific database."""
         try:
-            connection = self.connect_db.connect(database=database, local_infile=local_infile)
-            self.connections[database] = DatabaseContext(parent=self, database=database, connection=connection)
+            connection = self.connect_db.connect(
+                database=database, local_infile=local_infile
+            )
+            self.connections[database] = DatabaseContext(
+                database=database, connection=connection, llm=use_llm, model_name=model
+            )
         except Exception as e:
             print(f"Error connecting to database {database}: {e}")
             traceback.print_exc()

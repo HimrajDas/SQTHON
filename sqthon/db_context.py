@@ -1,21 +1,41 @@
 from sqlalchemy import text, Engine
-from sqlalchemy.exc import OperationalError, DataError, ProgrammingError, IntegrityError, ResourceClosedError
-from typing import Literal, Callable
+from sqlalchemy.exc import (
+    OperationalError,
+    DataError,
+    ProgrammingError,
+    IntegrityError,
+    ResourceClosedError,
+)
+from typing import Literal, Callable, Union
 from sqthon.util import create_table
-from sqthon.util import get_table_schema, tables, date_dimension, indexes, database_schema
+from sqthon.util import (
+    get_table_schema,
+    tables,
+    date_dimension,
+    indexes,
+    database_schema,
+)
 import os
 import pandas as pd
-
+from llm import LLM
 from sqthon.data_visualizer import DataVisualizer
+from rich import print as rprint
 
 
 class DatabaseContext:
     """Context-specific sub-instance for a specific database."""
 
-    def __init__(self, database: str, connection: Engine):
+    def __init__(self,
+                 database: str,
+                 connection: Engine,
+                 llm: bool = False,
+                 model_name: str = None,
+                 ):
         self.database = database
         self.connection = connection
         self.visualizer = DataVisualizer()
+        if llm:
+            self.llm = LLM(model=model_name, connection=self.connection)
 
     def get_tables(self) -> list:
         """Returns the names of available tables"""
@@ -28,7 +48,6 @@ class DatabaseContext:
     def table_schema(self, table: str) -> list:
         return get_table_schema(table=table, connection=self.connection)
 
-
     def get_database_schema(self) -> list:
         """Returns the schema of the database."""
         return database_schema(self.connection)
@@ -36,19 +55,47 @@ class DatabaseContext:
     def drop_table(self, table: str) -> None:
         """Drops a table from the database."""
         self.connection.execute(text(f"DROP TABLE {table}"))
+        
+    # TODO: Working on ask.
+    def ask(self,
+            prompt: str,
+            as_df: bool = False,
+            display_query: bool = True,
+            token_usage: bool = False) -> Union[str, pd.DataFrame]:
+        """
+        Ask a question about the database.
+        Args:
+            prompt (str): The question to ask
+            as_df (bool): If True, returns the raw DataFrame instead of formatted response
+            display_query (bool): If True, prints the generated SQL query
+            token_usage (bool): If True, shows how many tokens have been used.
 
+        Returns:
+            Union[str, pd.DataFrame]: Either formatted response or DataFrame based on as_df parameter
+        """
+        try:
+            self.llm.messages.append({"role": "user", "content": prompt})
+            self.llm.trim_context()
+            result = self.llm.execute_fn(show_query=display_query, show_token_usage=token_usage)
+            if as_df and self.llm.last_query_result is not None:
+                return self.llm.last_query_result
+            else:
+                rprint(result)
+                # return result
 
-    def ask(self, prompt: str):
-        ...
+        except Exception as e:
+            raise Exception(f"Error in ask method: {str(e)}")
 
-    def generate_date_series(self,
-                             table: str,
-                             start_year: str,
-                             end_year: str,
-                             frequency: str = 'D',
-                             if_exists: Literal["replace", "fail", "append"] = "fail",
-                             insert_method: Literal["multi"] | Callable | None = None,
-                             index: bool = True):
+    def generate_date_series(
+        self,
+        table: str,
+        start_year: str,
+        end_year: str,
+        frequency: str = "D",
+        if_exists: Literal["replace", "fail", "append"] = "fail",
+        insert_method: Literal["multi"] | Callable | None = None,
+        index: bool = True,
+    ):
         """
         Creates and populates a date dimension table from a specific year upto a specific year.
 
@@ -80,17 +127,24 @@ class DatabaseContext:
 
         """
 
-        df = date_dimension(connection=self.connection,
-                            year_start=start_year,
-                            year_end=end_year,
-                            freq=frequency)
+        df = date_dimension(
+            connection=self.connection,
+            year_start=start_year,
+            year_end=end_year,
+            freq=frequency,
+        )
 
-        df.to_sql(name=table, con=self.connection, if_exists=if_exists, method=insert_method, index=index)
+        df.to_sql(
+            name=table,
+            con=self.connection,
+            if_exists=if_exists,
+            method=insert_method,
+            index=index,
+        )
 
-    def import_csv_to_mysqldb(self,
-                              csv_path: str,
-                              table: str,
-                              terminated_by: str = "\n"):
+    def import_csv_to_mysqldb(
+        self, csv_path: str, table: str, terminated_by: str = "\n"
+    ):
         """
         Imports a CSV file into a MySQL database table with flexible import options.
 
@@ -127,38 +181,61 @@ class DatabaseContext:
             raise FileNotFoundError(f"CSV file not found: {csv_path}")
 
         try:
-            table = create_table(engine=self.connection, table_name=table, path=csv_path)
+            table = create_table(
+                engine=self.connection, table_name=table, path=csv_path
+            )
             columns = [col.name for col in table.columns]
             col_name_clause = ", ".join([f"`{name.strip()}`" for name in columns])
-            query = text(f"""
+            query = text(
+                f"""
             LOAD DATA LOCAL INFILE '{csv_path}'
             INTO TABLE {table}
             FIELDS TERMINATED BY ','
             LINES TERMINATED BY '{terminated_by}'
             IGNORE 1 ROWS
             ({col_name_clause})
-            """)
+            """
+            )
 
             self.connection.execute(query)
             self.connection.commit()
 
-        except (OperationalError, ProgrammingError, ResourceClosedError, IntegrityError, DataError) as e:
+        except (
+            OperationalError,
+            ProgrammingError,
+            ResourceClosedError,
+            IntegrityError,
+            DataError,
+        ) as e:
             self.connection.rollback()
             raise RuntimeError(f"Error importing CSV: {e}")
 
-    def run_query(self,
-                  query: str,
-                  plot_type: Literal[
-                      "scatter", "line", "bar",
-                      "hist", "box", "violin",
-                      "heatmap", "pairplot", "jointplot",
-                      "kde", "swarm", "lmplot"] | None = None,
-                  visualize: bool = False,
-                  x=None,
-                  y=None,
-                  title=None,
-                  **kwargs) -> pd.DataFrame | None:
-
+    def run_query(
+        self,
+        query: str,
+        plot_type: (
+            Literal[
+                "scatter",
+                "line",
+                "bar",
+                "hist",
+                "box",
+                "violin",
+                "heatmap",
+                "pairplot",
+                "jointplot",
+                "kde",
+                "swarm",
+                "lmplot",
+            ]
+            | None
+        ) = None,
+        visualize: bool = False,
+        x=None,
+        y=None,
+        title=None,
+        **kwargs,
+    ) -> pd.DataFrame | None:
         """
         Executes a SQL query and optionally visualizes the result.
 
@@ -183,7 +260,9 @@ class DatabaseContext:
             result = pd.read_sql_query(text(query), self.connection)
             if visualize:
                 if not all([plot_type, x, y]):
-                    raise ValueError("For visualization, please provide plot_type, x, y.")
+                    raise ValueError(
+                        "For visualization, please provide plot_type, x, y."
+                    )
                 self.visualizer.plot(result, plot_type, x, y, title, **kwargs)
 
             return result

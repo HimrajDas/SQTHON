@@ -28,7 +28,9 @@ class DatabaseConnector:
         connections (dict): Dictionary storing active connections.
     """
 
-    def __init__(self, dialect: str, user: str, host: str, service_instance_name: str = None):
+    def __init__(
+        self, dialect: str, user: str, host: str, service_instance_name: str = None
+    ):
         """
         Initializes the DatabaseConnector instance with specified connection parameters.
 
@@ -59,7 +61,9 @@ class DatabaseConnector:
             self.driver = None
 
     @final
-    def _create_engine(self, database: str, local_infile: bool, pool_size: int, max_overflow: int) -> Engine:
+    def _create_engine(
+        self, database: str, local_infile: bool, pool_size: int, max_overflow: int
+    ) -> Engine:
 
         try:
 
@@ -69,30 +73,36 @@ class DatabaseConnector:
             # TODO: if more than one same username exists then password fetching gonna give problems.
             password = os.getenv(f"{self.user}password")
             if not password:
-                raise ValueError(f"Password for user '{self.user}' not found in environment variables.")
+                raise ValueError(
+                    f"Password for user '{self.user}' not found in environment variables."
+                )
 
             url_object = URL.create(
                 f"{self.dialect}+{self.driver}",
                 username=self.user,
                 password=password,
                 host=self.host,
-                database=database
+                database=database,
             )
 
             connection_args = {
                 "local_infile": local_infile,
             }
 
-            return create_engine(url_object,
-                                 connect_args=connection_args,
-                                 pool_size=pool_size,
-                                 max_overflow=max_overflow,
-                                 pool_recycle=3600)
+            return create_engine(
+                url_object,
+                connect_args=connection_args,
+                pool_size=pool_size,
+                max_overflow=max_overflow,
+                pool_recycle=3600,
+            )
         except ArgumentError as ae:
             print(f"Incorrect arguments: {ae}")
 
     @final
-    def server_level_engine(self, database: str = None, local_infile: bool = False) -> Engine:
+    def server_level_engine(
+        self, database: str = None, local_infile: bool = False
+    ) -> Engine:
         """Use this engine for server level one-time operation.
         It's good to use this method using context manager.
 
@@ -107,11 +117,11 @@ class DatabaseConnector:
         try:
             if database:
                 url_object = URL.create(
-                        f"{self.dialect}+{self.driver}",
-                        username=self.user,
-                        password=os.getenv(f"{self.user}password"),
-                        host=self.host,
-                        database=database
+                    f"{self.dialect}+{self.driver}",
+                    username=self.user,
+                    password=os.getenv(f"{self.user}password"),
+                    host=self.host,
+                    database=database,
                 )
             else:
                 url_object = URL.create(
@@ -121,39 +131,48 @@ class DatabaseConnector:
                     host=self.host,
                 )
 
-
-            args = {
-                "local_infile": local_infile
-            }
+            args = {"local_infile": local_infile}
 
             return create_engine(url_object, connect_args=args)
         except ArgumentError as e:
             print(f"Incorrect arguments: {e}")
 
-
     @final
-    def connect(self, database: str, local_infile: bool, pool_size: int = 20, max_overflow: int = 10):
+    def connect(
+        self,
+        database: str,
+        local_infile: bool,
+        pool_size: int = 20,
+        max_overflow: int = 10,
+    ):
         if database not in self.connections or self.connections[database].closed:
             try:
                 if database not in self.engines:
-                    self.engines[database] = self._create_engine(database, local_infile, pool_size, max_overflow)
+                    self.engines[database] = self._create_engine(
+                        database, local_infile, pool_size, max_overflow
+                    )
                 self.connections[database] = self.engines[database].connect()
             except OperationalError:
                 from sqthon.services import start_service
+
                 print(f"Looks like {self.dialect} server instance is not running.")
                 print("Trying to start the server...")
                 try:
                     if self.service_instance_name is None:
-                        self.service_instance_name = input("Enter the server instance name: ")
+                        self.service_instance_name = input(
+                            "Enter the server instance name: "
+                        )
                     start_service(self.service_instance_name)
                     self.connections[database] = self.engines[database].connect()
                     return self.connections[database]
-                except Exception as e:
-                    raise RuntimeError(f"Not able established the server! Try to start manually.")
+                except Exception:
+                    raise RuntimeError(
+                        f"Not able established the server! Try to start manually."
+                    )
 
         return self.connections[database]
 
-
+    @final
     def disconnect(self, database):
         if database in self.connections and self.connections[database] is not None:
             try:
@@ -162,7 +181,6 @@ class DatabaseConnector:
                 print(f"Error closing the connection: {e}")
             finally:
                 del self.connections[database]
-
 
     @final
     def dispose_engine(self, database: str):
