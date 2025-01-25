@@ -17,7 +17,7 @@ from sqthon.util import (
 )
 import os
 import pandas as pd
-from llm import LLM
+from sqthon.llm import LLM
 from sqthon.data_visualizer import DataVisualizer
 from rich import print as rprint
 
