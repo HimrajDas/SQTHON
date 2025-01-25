@@ -7,7 +7,7 @@ from typing import Literal
 from sqthon.db_context import DatabaseContext
 
 
-@final
+
 class Sqthon:
     def __init__(self,
                  dialect: str,
