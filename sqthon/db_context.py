@@ -57,26 +57,27 @@ class DatabaseContext:
         self.connection.execute(text(f"DROP TABLE {table}"))
         
     # TODO: Working on ask.
-    def ask(self,
-            prompt: str,
-            as_df: bool = False,
-            display_query: bool = True,
-            token_usage: bool = False) -> Union[str, pd.DataFrame]:
+    def ask(
+            self, prompt: str, as_df: bool = False, display_query: bool = True
+    ) -> Union[str, pd.DataFrame]:
         """
         Ask a question about the database.
         Args:
             prompt (str): The question to ask
             as_df (bool): If True, returns the raw DataFrame instead of formatted response
             display_query (bool): If True, prints the generated SQL query
-            token_usage (bool): If True, shows how many tokens have been used.
 
         Returns:
             Union[str, pd.DataFrame]: Either formatted response or DataFrame based on as_df parameter
         """
         try:
             self.llm.messages.append({"role": "user", "content": prompt})
-            self.llm.trim_context()
-            result = self.llm.execute_fn(show_query=display_query, show_token_usage=token_usage)
+            self.llm.trim_chat()
+            result = self.llm.execute_fn(show_query=display_query)
+
+            # if show_token_usage and token_count is not None:
+            #     print(f"Token Usage: {token_count} tokens used.")
+
             if as_df and self.llm.last_query_result is not None:
                 return self.llm.last_query_result
             else:
