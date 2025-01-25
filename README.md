@@ -1,13 +1,22 @@
 # _SQTHON_
-
-
 ### _Connect to multiple databases, run and generate raw SQL queries, perform analysis and make visualization._
 
-## _Currently working on:_
-- ### **_SqthonAI_**: _generate SQL queries using a LLM of your choice_ 🤖
-- #### **Security improvements**💀
-- #### **New Features**
-- #### **Custom exception for better error showcase** 🙄
+## ⚠️ Pre-Release Notice
+
+This package is currently in **pre-release** and is under active development. 
+
+### So things to consider:
+- **Expect Bugs**: While the core functionality works, some features may not be fully stable.
+- **Frequent Updates**: APIs and features are subject to change in upcoming versions.
+- **Contributions Welcome**: Feedback and contributions are highly encouraged to help improve the package.
+
+
+## _Actively working on:_
+- 🚀 **_SqthonAI_**: Generate SQL queries using a Large Language Model (LLM) of your choice.
+- 💀 **Security Improvements**.
+- 🆕 **New Features and Enhancements**.
+- 🙄 **Custom Exceptions for Better Error Messages**.
+- ✅ **Unit Test Coverage**.
 
 ### Package is not published to pypi yet and is being made using poetry. 🍕
 ### Currently, this package will work on windows only.
