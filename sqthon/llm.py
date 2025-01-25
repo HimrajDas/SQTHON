@@ -1,4 +1,4 @@
-from openai import OpenAI
+from openai import OpenAI, APIError, APIConnectionError, OpenAIError, RateLimitError
 from dotenv import load_dotenv
 from sqthon.util import (
     database_schema,
@@ -8,6 +8,8 @@ import os
 from sqlalchemy import Engine, text
 import json
 import pandas as pd
+from typing import final
+from tenacity import retry, wait_random_exponential, stop_after_attempt
 
 
 class LLM:
@@ -79,14 +81,26 @@ class LLM:
                 self.messages.pop(1)
                 self.messages.pop(1)
 
+    @final
+    @retry(wait=wait_random_exponential(multiplier=1, max=10), stop=stop_after_attempt(3))
     def get_response(self):
-        return self.client.chat.completions.create(
-            model=self.model, messages=self.messages,
-            tools=self.tools, tool_choice="auto",
-            temperature=0.3
-        )
+        try:
+            return self.client.chat.completions.create(
+                model=self.model, messages=self.messages,
+                tools=self.tools, tool_choice="auto",
+                temperature=0.3
+            )
+        except (APIError, APIConnectionError, OpenAIError, RateLimitError) as e:
+            print(f"Error occurred: {e}")
+
 
     def execute_fn(self, show_query: bool = False):
+        """
+        Checks for model responses and executes ask_db method.
+        Parameters:
+            - show_query (bool): Show the generated query if True.
+        """
+
         try:
             response = self.get_response()
             response_msg = response.choices[0].message
@@ -99,6 +113,9 @@ class LLM:
 
                 if function_name == "ask_db":
                     query = json.loads(tool_call.function.arguments)["query"]
+
+                    if show_query:
+                        print(query)
 
                     result = self.ask_db(query)
                     results_json = make_dataframe_json_serializable(result)
@@ -117,18 +134,16 @@ class LLM:
                             "content": json.dumps(results_json),
                         }
                     )
+                    try:
+                        final_response = self.client.chat.completions.create(
+                            model=self.model, messages=self.messages, temperature=0.3
+                        )
+                        return final_response.choices[0].message.content
+                    except RateLimitError as e:
+                        print(f"Rate limit exceeded: {e}")
 
-                    final_response = self.client.chat.completions.create(
-                        model=self.model, messages=self.messages, temperature=0.3
-                    )
-
-                    if show_query:
-                        print(query)
-
-                    return final_response.choices[0].message.content
                 else:
                     raise ValueError(f"Unknown function: {function_name}")
-
             else:
                 return response_msg.content
 

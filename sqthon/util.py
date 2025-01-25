@@ -246,9 +246,9 @@ def make_dataframe_json_serializable(df: pd.DataFrame):
     for col in df.select_dtypes(include=["datetime", "datetimetz"]).columns:
         df[col] = df[col].dt.strftime("%Y-%m-%d")  # Convert datetime to string format
 
-    # 3. Handle object or complex types (e.g., dict, list, etc.)
+    # 3. Handle object or complex types (e.g., dict, list, tuple, etc.)
     def handle_complex_types(value):
-        if isinstance(value, (dict, list)):  # If value is dict or list, convert to JSON string
+        if isinstance(value, (dict, list, tuple)):  # If value is dict or list or tuple, convert to JSON string
             return json.dumps(value)
         return value
 

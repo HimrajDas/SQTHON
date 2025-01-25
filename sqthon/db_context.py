@@ -6,7 +6,7 @@ from sqlalchemy.exc import (
     IntegrityError,
     ResourceClosedError,
 )
-from typing import Literal, Callable, Union
+from typing import Literal, Callable, final
 from sqthon.util import create_table
 from sqthon.util import (
     get_table_schema,
@@ -22,6 +22,7 @@ from sqthon.data_visualizer import DataVisualizer
 from rich import print as rprint
 
 
+@final
 class DatabaseContext:
     """Context-specific sub-instance for a specific database."""
 
@@ -55,11 +56,11 @@ class DatabaseContext:
     def drop_table(self, table: str) -> None:
         """Drops a table from the database."""
         self.connection.execute(text(f"DROP TABLE {table}"))
-        
-    # TODO: Working on ask.
+
+
     def ask(
             self, prompt: str, as_df: bool = False, display_query: bool = True
-    ) -> Union[str, pd.DataFrame]:
+    ) -> str | pd.DataFrame:
         """
         Ask a question about the database.
         Args:
@@ -88,14 +89,14 @@ class DatabaseContext:
             raise Exception(f"Error in ask method: {str(e)}")
 
     def generate_date_series(
-        self,
-        table: str,
-        start_year: str,
-        end_year: str,
-        frequency: str = "D",
-        if_exists: Literal["replace", "fail", "append"] = "fail",
-        insert_method: Literal["multi"] | Callable | None = None,
-        index: bool = True,
+            self,
+            table: str,
+            start_year: str,
+            end_year: str,
+            frequency: str = "D",
+            if_exists: Literal["replace", "fail", "append"] = "fail",
+            insert_method: Literal["multi"] | Callable | None = None,
+            index: bool = True,
     ):
         """
         Creates and populates a date dimension table from a specific year upto a specific year.
@@ -144,7 +145,7 @@ class DatabaseContext:
         )
 
     def import_csv_to_mysqldb(
-        self, csv_path: str, table: str, terminated_by: str = "\n"
+            self, csv_path: str, table: str, terminated_by: str = "\n"
     ):
         """
         Imports a CSV file into a MySQL database table with flexible import options.
@@ -202,40 +203,40 @@ class DatabaseContext:
             self.connection.commit()
 
         except (
-            OperationalError,
-            ProgrammingError,
-            ResourceClosedError,
-            IntegrityError,
-            DataError,
+                OperationalError,
+                ProgrammingError,
+                ResourceClosedError,
+                IntegrityError,
+                DataError,
         ) as e:
             self.connection.rollback()
             raise RuntimeError(f"Error importing CSV: {e}")
 
     def run_query(
-        self,
-        query: str,
-        plot_type: (
-            Literal[
-                "scatter",
-                "line",
-                "bar",
-                "hist",
-                "box",
-                "violin",
-                "heatmap",
-                "pairplot",
-                "jointplot",
-                "kde",
-                "swarm",
-                "lmplot",
-            ]
-            | None
-        ) = None,
-        visualize: bool = False,
-        x=None,
-        y=None,
-        title=None,
-        **kwargs,
+            self,
+            query: str,
+            plot_type: (
+                    Literal[
+                        "scatter",
+                        "line",
+                        "bar",
+                        "hist",
+                        "box",
+                        "violin",
+                        "heatmap",
+                        "pairplot",
+                        "jointplot",
+                        "kde",
+                        "swarm",
+                        "lmplot",
+                    ]
+                    | None
+            ) = None,
+            visualize: bool = False,
+            x=None,
+            y=None,
+            title=None,
+            **kwargs,
     ) -> pd.DataFrame | None:
         """
         Executes a SQL query and optionally visualizes the result.
