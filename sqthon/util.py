@@ -259,52 +259,19 @@ def make_dataframe_json_serializable(df: pd.DataFrame):
     return df.to_dict(orient="records")
 
 
-def format_database_schema(schema_dict):
+def format_database_schema(db_schema: List):
     """
     Format database schema into a readable string representation
     """
-
-    def format_data_type(dtype):
-        dtype_str = str(dtype)
-        # Clean up the data type string
-        return dtype_str.replace('()', '').upper()
-
-    formatted_output = []
-
-    # First, add available databases
-    if isinstance(schema_dict[0], str):
-        formatted_output.append("Available Databases:")
-        formatted_output.append("═" * 50)
-        formatted_output.extend([f"• {db}" for db in schema_dict])
-        return "\n".join(formatted_output)
-
-    # Format table schemas
-    for table in schema_dict:
-        # Table header
-        formatted_output.append(f"\nTable: {table['table_name']}")
-        formatted_output.append("═" * 50)
-
-        # Keys section
-        keys = table['keys']
-        if keys['primary_keys']:
-            formatted_output.append(f"Primary Keys: {', '.join(keys['primary_keys'])}")
-        if keys['foreign_keys']:
-            formatted_output.append(f"Foreign Keys: {', '.join(keys['foreign_keys'])}")
-
-        # Columns section
-        formatted_output.append("\nColumns:")
-        formatted_output.append("─" * 50)
-        max_name_length = max(len(col['name']) for col in table['column_names_with_dtypes'])
-
-        # Format each column with aligned data types
-        for col in table['column_names_with_dtypes']:
-            name = col['name'].ljust(max_name_length)
-            dtype = format_data_type(col['data_type'])
-            formatted_output.append(f"• {name} | {dtype}")
-
-        formatted_output.append("")  # Add spacing between tables
-
-    return "\n".join(formatted_output)
+    return "\n".join(
+        [
+            f"Table Name: {table['table_name']}\n"
+            f"Primary keys-> {", ".join(item for item in table['keys']['primary_keys'])}\n"
+            f"Foreign keys-> {", ".join(f'{k}: {v}' for item in table["keys"]["foreign_keys"] for k, v in item.items())}\n"
+            f"Column Names with Dtypes->\n{'\n'.join(f"{item['name']}: {str(item['data_type'])}" for item in table['column_names_with_dtypes'])}\n"
+            for table in db_schema
+        ]
+    )
 
 
 def num_tokens_from_messages(messages: List, model: str):
