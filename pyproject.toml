@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "sqthon"
-version = "0.1.2"
-description = ""
+version = "0.1.3"
+description = "A tool to connect, visualize and execute raw or LLM-generated SQL queries across multiple databases."
 authors = ["HIMRAJ <himraj.fordev@gmail.com>"]
 readme = "README.md"
 license = "MIT"
