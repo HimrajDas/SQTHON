@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "sqthon"
-version = "0.1.0"
+version = "0.1.1"
 description = ""
 authors = ["HIMRAJ <himraj.fordev@gmail.com>"]
 readme = "README.md"
@@ -23,6 +23,7 @@ pymysql = "^1.1.1"
 openai = "^1.57.3"
 tenacity = "^9.0.0"
 tiktoken = "^0.8.0"
+rich = "^13.9.4"
 
 
 [build-system]
