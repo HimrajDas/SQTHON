@@ -1,25 +1,24 @@
 # _SQTHON_
-### _Connect to multiple databases, run and generate raw SQL queries, perform analysis and make visualization._
+### _Connect across databases, perform raw or llm generated SQL queries, and make visualization._
 
 ## ⚠️ Pre-Release Notice
 
 This package is currently in **pre-release** and is under active development. 
 
-### So things to consider:
+### Things to consider:
 - **Expect Bugs**: While the core functionality works, some features may not be fully stable.
 - **Frequent Updates**: APIs and features are subject to change in upcoming versions.
 - **Contributions Welcome**: Feedback and contributions are highly encouraged to help improve the package.
 
 
 ## _Actively working on:_
-- 🚀 **_SqthonAI_**: Generate SQL queries using a Large Language Model (LLM) of your choice.
+- 🚀 **_LLM Integration_**: Generate SQL queries using a Large Language Model (LLM) of your choice. Currently supports OpenAI.
 - 💀 **Security Improvements**.
 - 🆕 **New Features and Enhancements**.
 - 🙄 **Custom Exceptions for Better Error Messages**.
 - ✅ **Unit Test Coverage**.
 
-### Package is not published to pypi yet and is being made using poetry. 🍕
-### Currently, this package will work on windows only.
+### _Currently, this package will work on windows only_.
 ### Unit tests needs to be complete.
 ### And for your safety create a virtual environment.😐
 
@@ -63,10 +62,11 @@ poetry install
 `pip install git+https://github.com/HimrajDas/SQTHON`
 
 
-# _Now how do I use it🤓_
-### _1. Create a .env file in your project root_. [a must-do step]
-   - **set database passwords like this: `<username>password`** ✅
-
+# _Now how do I use it🤔_
+## _1. First of all a .env is must_.
+### _In the .env set your precious stuff like this:)_
+   - **Set database passwords like this: `<username>password`** ✅
+   - Set **OpenAI** API keys exactly like this: OPENAI_API_KEY="ClosedAI" ✅
 ### _2. Let's connect to a database_.
 ```python
 from sqthon import Sqthon
@@ -75,13 +75,24 @@ sq = Sqthon(dialect="mysql", user="root", host="localhost", service_instance_nam
 
 # Connects to a database
 conn1 = sq.connect_to_database(database="dbname", local_infile=True) # local_infile controls the infile settings for the client.
-conn2 = sq.connect_to_database("dbname")
+conn2 = sq.connect_to_database("dbname") # another database.
 
 # or you can connect like this:
 conn3 = sq.connect_db.connect(database="dbname") # not preferred ❌.
 ```
+## _Let's use a llm. Currently supports OpenAI only._ 
+```python
+# Connect to the database by setting use_llm=True and model="model name".
+conn = sq.connect_to_database(database="Proxima details", use_llm=True, model="gpt-3.5-turbo")
+# And just this.
+conn.ask(prompt="What tables are available?")
+```
+_*ask()* currently accept another two parameters also: as_df and display_query,_
+_whose default values are False and True respectively. Setting as_df=True will return the result as a_
+_pandas dataframe._
+### _I will add more robust llm features and support for local model also._
 
-If your MySQL server is not running then providing service_instance_name will start the server automatically.
+If your MySQL server is not running then providing **service_instance_name** will start the server automatically.
 If you are not running the script as an administrator, it will ask for admin privilege to start the server.
 
 
@@ -164,4 +175,7 @@ conn1.import_csv_to_mysqldb(csv_path="/path/to/csv", table="dummy", lines_termin
 # it's terminated by '\r\n'
 ```
 
-You can use generate_date_series to create date series like postgres generate_series.
+You can use **generate_date_series** to create date series like postgres generate_series.
+
+# Final step.
+##  _❤️Love Yourself and Others❤️_
