@@ -7,7 +7,6 @@ from typing import Literal
 from sqthon.db_context import DatabaseContext
 
 
-
 class Sqthon:
     def __init__(
             self, dialect: str, user: str, host: str, service_instance_name: str = None
@@ -70,6 +69,7 @@ class Sqthon:
         except (OperationalError, ProgrammingError) as e:
             print(f"An error occurred: {e}")
 
+    @final
     def file_permission(self, access: Literal["grant", "revoke"]):
         """Give or remove access to a user."""
         try:
@@ -124,6 +124,7 @@ class Sqthon:
         with self.connect_db.server_level_engine().connect() as connection:
             connection.execute(text(f"DROP DATABASE {database};"))
 
+    @final
     def connect_to_database(self, database: str = None, local_infile: bool = False, use_llm: bool = False,
                             model: str = None):
         """Connects to specific database."""
@@ -140,6 +141,7 @@ class Sqthon:
 
         return self.connections[database]
 
+    @final
     def show_connections(self):
         return [key for key in self.connect_db.connections]
 
