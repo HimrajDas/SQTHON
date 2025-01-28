@@ -27,6 +27,7 @@ This package is currently in **pre-release** and is under active development.
 ### If you don't have mysql installed, you can download it from [here](https://dev.mysql.com/downloads/installer/). ⭐
 
 ## _Installation 📦_
+### For installation just do this:
 `pip install sqthon`
 
 
