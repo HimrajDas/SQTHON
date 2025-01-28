@@ -27,40 +27,7 @@ This package is currently in **pre-release** and is under active development.
 ### If you don't have mysql installed, you can download it from [here](https://dev.mysql.com/downloads/installer/). ⭐
 
 ## _Installation 📦_
-
-### 1. Clone the repository.
-```
-https://github.com/HimrajDas/SQTHON.git
-```
-
-```
-cd sqthon
-```
-
-###  2. Install poetry (if not installed)
-Using Windows powershell
-```
-(Invoke-WebRequest -Uri https://install.python-poetry.org -UseBasicParsing).Content | py -
-```
-
-Using Linux, macOS, Windows (WSL)
-```
-curl -sSL https://install.python-poetry.org | python3 -
-```
-
-Using pipx
-```
-pipx install poetry
-```
-
-### 3. Install dependencies using poetry
-```
-poetry install
-```
-
-### _Alternative install 📦_
-`pip install git+https://github.com/HimrajDas/SQTHON`
-
+`pip install sqthon`
 
 # _Now how do I use it🤔_
 ## _1. First of all a .env is must_.
